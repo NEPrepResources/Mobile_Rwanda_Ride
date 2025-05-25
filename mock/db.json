@@ -194,6 +194,16 @@
       "licenseNumber": "STU12345",
       "vehicleType": "Sedan",
       "licensePlate": "RAG901H"
+    },
+    {
+      "fullName": "Akuzwe",
+      "phone": "0798384666",
+      "email": "akuzwe@gmail.com",
+      "password": "yezu@123A",
+      "address": "Byumba",
+      "profilePicture": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540anonymous%252FRwandaRide-e805ea96-fc4f-4a55-8f63-9ff3c395d227/ImagePicker/7cc353d0-61f6-462e-ae77-fea61a723905.jpeg",
+      "isDriver": false,
+      "id": "XoDfV_a"
     }
   ],
   "bookings": [

@@ -6,7 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Switch,
-  Image
+  Image,
+  Alert
 } from 'react-native';
 import { router, Link } from 'expo-router';
 import { useDispatch, useSelector } from 'react-redux';
@@ -36,7 +37,7 @@ export default function SignupScreen() {
   const [address, setAddress] = useState('');
   const [isDriver, setIsDriver] = useState(false);
   const [licenseNumber, setLicenseNumber] = useState('');
-  const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const [profilePicture, setProfilePicture] = useState<string | undefined>(undefined);
 
   const [fullNameError, setFullNameError] = useState('');
   const [phoneError, setPhoneError] = useState('');
@@ -54,12 +55,39 @@ export default function SignupScreen() {
   );
 
   useEffect(() => {
-    if (isAuthenticated && user) {
-      if (user.isDriver) {
-        router.replace('/(driver)');
-      } else {
-        router.replace('/(app)');
+    (async () => {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission required',
+          'Please enable permissions to access your photo library.'
+        );
       }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      Alert.alert(
+        'Registration Successful',
+        'Your account has been created successfully!',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setFullName('');
+              setPhone('');
+              setEmail('');
+              setPassword('');
+              setAddress('');
+              setLicenseNumber('');
+              setProfilePicture(undefined);
+              setIsDriver(false);
+              router.replace('./login');
+            }
+          }
+        ]
+      );
     }
   }, [isAuthenticated, user]);
 
@@ -80,23 +108,16 @@ export default function SignupScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.5,
+        quality: 0.8,
       });
 
-      if (!result.canceled) {
+      if (!result.canceled && result.assets && result.assets.length > 0) {
         const uri = result.assets[0].uri;
-        const response = await fetch(uri);
-        const blob = await response.blob();
-
-        if (blob.size > 5 * 1024 * 1024) {
-          setProfilePictureError('Image size must be less than 5MB');
-          return;
-        }
-
         setProfilePicture(uri);
         setProfilePictureError('');
       }
     } catch (error) {
+      console.log('Image picker error:', error);
       setProfilePictureError('Failed to select image');
     }
   };
@@ -150,7 +171,7 @@ export default function SignupScreen() {
         email,
         password,
         address,
-        profilePicture: profilePicture ?? undefined, 
+        profilePicture: profilePicture || undefined, 
         isDriver,
         ...(isDriver && { licenseNumber })
       };
@@ -229,6 +250,7 @@ export default function SignupScreen() {
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   safeArea: {
