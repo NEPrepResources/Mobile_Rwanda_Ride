@@ -1,11 +1,11 @@
+// app/(auth)/login.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { router, Link } from 'expo-router';
 import { useDispatch, useSelector } from 'react-redux';
 import Modal from 'react-native-modal';
 import { login, resetError } from '@/store/slices/authSlice';
-import { RootState } from '@/store/store';
-import { AppDispatch } from '@/store/store';
+import { RootState, AppDispatch } from '@/store/store';
 import FormInput from '@/components/ui/FormInput';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import { validateEmail, validatePassword } from '@/utils/validation';
@@ -77,7 +77,6 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <LogoHeader />
-
       <View style={styles.formContainer}>
         <Text style={styles.title}>Welcome Back</Text>
         <Text style={styles.subtitle}>Sign in to your account</Text>

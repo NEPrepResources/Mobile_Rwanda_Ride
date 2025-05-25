@@ -59,7 +59,6 @@ export default function HomeScreen() {
       ]}
       contentContainerStyle={styles.contentContainer}
     >
-      {/* Hero Section */}
       <View style={styles.heroSection}>
         <View>
           <Text style={styles.greeting}>{getGreeting()},</Text>
@@ -110,7 +109,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
       
-      {/* Recent Bookings */}
       <DashboardCard 
         title="Recent Bookings" 
         viewAllRoute="./bookings"
