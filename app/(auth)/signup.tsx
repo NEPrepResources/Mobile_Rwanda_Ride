@@ -48,7 +48,6 @@ export default function SignupScreen() {
   const [addressError, setAddressError] = useState('');
   const [licenseNumberError, setLicenseNumberError] = useState('');
   const [profilePictureError, setProfilePictureError] = useState('');
-  const navigation = useNavigation();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
 

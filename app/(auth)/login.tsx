@@ -11,7 +11,6 @@ import { validateEmail, validatePassword } from '@/utils/validation';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '@/constants/colors';
 import LogoHeader from '@/components/ui/LogoHeader';
-import { useNavigation } from 'expo-router';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -19,7 +18,6 @@ export default function LoginScreen() {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const navigation = useNavigation();
 
   const dispatch = useDispatch<AppDispatch>();
   const { isLoading, isAuthenticated, error, user } = useSelector(
@@ -36,9 +34,9 @@ export default function LoginScreen() {
             text: 'OK',
             onPress: () => {
               if (user.isDriver) {
-                navigation.navigate('driver')
+                router.push('/(driver)');
               } else {
-              navigation.navigate('app')
+              router.push('/(app)');
               }
             },
           },
