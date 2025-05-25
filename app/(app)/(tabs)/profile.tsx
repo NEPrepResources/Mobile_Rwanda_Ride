@@ -15,6 +15,7 @@ import { updateProfile, resetError } from '@/store/slices/authSlice';
 import { RootState, AppDispatch } from '@/store/store';
 import FormInput from '@/components/ui/FormInput';
 import PrimaryButton from '@/components/ui/PrimaryButton';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   validateFullName,
   validatePhone,
@@ -165,6 +166,7 @@ export default function ProfileScreen() {
   }
 
   return (
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
     <ScrollView
       style={[
         styles.container,
@@ -283,12 +285,17 @@ export default function ProfileScreen() {
         </View>
       </Modal>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+      safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.LIGHT_BG, 
+  },
   container: { flex: 1 },
-  contentContainer: { padding: 20 },
+  contentContainer: { padding: 20, paddingTop: 20 },
   profileCard: {
     borderRadius: 12,
     padding: 20,

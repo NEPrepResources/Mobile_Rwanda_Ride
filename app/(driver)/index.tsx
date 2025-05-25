@@ -16,17 +16,14 @@ export default function DriverDashboardScreen() {
 
   useEffect(() => {
     if (user) {
-      // Get bookings where this driver is assigned
       dispatch(fetchBookings({ status: 'Pending' }));
     }
   }, [dispatch, user]);
 
-  // Get pending requests for quick access
   const pendingRequests = bookings.filter(booking => 
     booking.status === 'Pending' && !booking.driverId
   ).slice(0, 3);
   
-  // Get current active bookings for this driver
   const activeBookings = bookings.filter(booking => 
     (booking.status === 'Confirmed') && booking.driverId === user?.id
   ).slice(0, 3);
@@ -57,7 +54,6 @@ export default function DriverDashboardScreen() {
       ]}
       contentContainerStyle={styles.contentContainer}
     >
-      {/* Hero Section */}
       <View style={styles.heroSection}>
         <View>
           <Text style={styles.greeting}>{getGreeting()},</Text>
@@ -75,7 +71,6 @@ export default function DriverDashboardScreen() {
         )}
       </View>
       
-      {/* Stats Overview */}
       <View style={styles.statsContainer}>
         <View 
           style={[
@@ -189,7 +184,6 @@ export default function DriverDashboardScreen() {
         ) : null}
       </DashboardCard>
       
-      {/* Active Rides */}
       <DashboardCard 
         title="Active Rides" 
         viewAllRoute="./history"

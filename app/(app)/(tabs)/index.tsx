@@ -8,6 +8,7 @@ import { RootState, AppDispatch } from '@/store/store';
 import { COLORS } from '@/constants/colors';
 import DashboardCard from '@/components/ui/DashboardCard';
 import { MaterialIcons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const dispatch = useDispatch<AppDispatch>();
@@ -23,12 +24,10 @@ export default function HomeScreen() {
     }
   }, [dispatch, user]);
 
-  // Get the most recent bookings
   const recentBookings = [...bookings]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 3);
   
-  // Get a few available vehicles
   const availableVehicles = vehicles
     .filter(vehicle => vehicle.available)
     .slice(0, 3);
@@ -52,6 +51,7 @@ export default function HomeScreen() {
   };
 
   return (
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
     <ScrollView 
       style={[
         styles.container, 
@@ -76,7 +76,6 @@ export default function HomeScreen() {
         )}
       </View>
       
-      {/* Quick Actions */}
       <View style={styles.quickActionsContainer}>
         <TouchableOpacity 
           style={styles.quickActionButton}
@@ -141,7 +140,6 @@ export default function HomeScreen() {
         ) : null}
       </DashboardCard>
       
-      {/* Available Vehicles */}
       <DashboardCard 
         title="Available Vehicles" 
         viewAllRoute="./vehicles"
@@ -170,16 +168,22 @@ export default function HomeScreen() {
         ) : null}
       </DashboardCard>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+    safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.LIGHT_BG, 
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.LIGHT_BG,
   },
   contentContainer: {
     padding: 16,
+    paddingTop: 32,
   },
   heroSection: {
     flexDirection: 'row',

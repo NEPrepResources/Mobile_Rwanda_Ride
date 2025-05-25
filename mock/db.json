@@ -750,6 +750,20 @@
       "cost": 1500,
       "status": "Pending",
       "createdAt": "2025-07-09T14:50:00.000Z"
+    },
+    {
+      "pickupLocation": "Kagugu market",
+      "destination": "Gisozi",
+      "rideType": "Economy",
+      "passengers": 1,
+      "dateTime": "2025-05-26T20:33:00.000Z",
+      "duration": 1,
+      "bookingId": "R0CFFL7ZUM",
+      "userId": "u1",
+      "cost": 2500,
+      "status": "Pending",
+      "createdAt": "2025-05-25T20:34:18.605Z",
+      "id": "iH81_BU"
     }
   ],
   "vehicles": [

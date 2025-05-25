@@ -1,5 +1,6 @@
 import React from 'react';
 import { Drawer } from 'expo-router/drawer';
+import { Tabs } from 'expo-router/tabs';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -27,31 +28,10 @@ export default function AppLayout() {
       drawerContent={(props) => <CustomDrawerContent {...props} />}
     >
       <Drawer.Screen
-        name="index"
+        name="(tabs)"
         options={{
           title: 'Home',
-          headerTitle: 'RwandaRide',
-          drawerIcon: ({ color }) => (
-            <MaterialIcons name="home" size={24} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="profile"
-        options={{
-          title: 'My Profile',
-          drawerIcon: ({ color }) => (
-            <MaterialIcons name="person" size={24} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="bookRide"
-        options={{
-          title: 'Book a Ride',
-          drawerIcon: ({ color }) => (
-            <MaterialIcons name="directions-car" size={24} color={color} />
-          ),
+          headerShown: false,
         }}
       />
       <Drawer.Screen

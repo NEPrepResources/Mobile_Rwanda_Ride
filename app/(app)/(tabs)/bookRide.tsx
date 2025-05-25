@@ -17,6 +17,7 @@ import { createBooking, calculateCost } from '@/store/slices/bookingSlice';
 import { RootState, AppDispatch } from '@/store/store';
 import { COLORS } from '@/constants/colors';
 import { MaterialIcons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface FormErrors {
   pickupLocation: string;
@@ -170,6 +171,7 @@ export default function BookRideScreen() {
   };
 
   return (
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
     <ScrollView 
       style={[
         styles.container,
@@ -347,16 +349,22 @@ export default function BookRideScreen() {
         </View>
       </Modal>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+      safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.LIGHT_BG, 
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.LIGHT_BG,
   },
   contentContainer: {
     padding: 16,
+    paddingTop: 16,
   },
   card: {
     backgroundColor: 'white',
