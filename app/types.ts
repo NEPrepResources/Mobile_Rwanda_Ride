@@ -1,3 +1,5 @@
+import { NavigatorScreenParams } from '@react-navigation/native';
+
 export type RootStackParamList = {
   login: undefined;
   app: undefined;
@@ -10,3 +12,6 @@ declare global {
     interface RootParamList extends RootStackParamList {}
   }
 }
+
+const DefaultExport = () => null;
+export default DefaultExport;

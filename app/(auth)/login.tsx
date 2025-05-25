@@ -1,6 +1,5 @@
-// app/(auth)/login.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native'; // Added Alert
 import { router, Link } from 'expo-router';
 import { useDispatch, useSelector } from 'react-redux';
 import Modal from 'react-native-modal';
@@ -27,11 +26,25 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (user.isDriver) {
-        router.replace('/(driver)');
-      } else {
-        router.replace('/(app)');
-      }
+      // Show alert before navigating
+      Alert.alert(
+        'Success',
+        'Login Successful',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Navigate after user acknowledges the alert
+              if (user.isDriver) {
+                router.replace('/(driver)');
+              } else {
+                router.replace('/(app)');
+              }
+            },
+          },
+        ],
+        { cancelable: false }
+      );
     }
   }, [isAuthenticated, user]);
 
@@ -70,7 +83,9 @@ export default function LoginScreen() {
 
   const handleLogin = () => {
     if (validateForm()) {
-      dispatch(login({ email, password }));
+      const trimmedEmail = email.trim();
+      const trimmedPassword = password.trim();
+      dispatch(login({ email: trimmedEmail, password: trimmedPassword }));
     }
   };
 
@@ -122,11 +137,12 @@ export default function LoginScreen() {
           </Link>
         </View>
       </View>
-
       <Modal isVisible={isModalVisible} onBackdropPress={closeModal}>
         <View style={styles.modalContainer}>
           <Text style={styles.modalTitle}>Login Failed</Text>
-          <Text style={styles.modalMessage}>{error}</Text>
+          <Text style={styles.modalMessage}>
+            {error ? (typeof error === 'string' ? error : JSON.stringify(error)) : 'An unknown error occurred'}
+          </Text>
           <TouchableOpacity style={styles.modalButton} onPress={closeModal}>
             <Text style={styles.modalButtonText}>OK</Text>
           </TouchableOpacity>

@@ -2,7 +2,6 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '@/utils/apiClient';
 
-// Types
 export interface User {
   id: string;
   fullName: string;
@@ -12,58 +11,89 @@ export interface User {
   profilePicture?: string;
   isDriver?: boolean;
   licenseNumber?: string;
-  vehicleType: string;
-  licensePlate: string;
+  vehicleType?: string;
+  licensePlate?: string;
+  password?: string; // Added password field
 }
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
 }
 
-// Initial state
 const initialState: AuthState = {
   user: null,
-  token: null,
   isAuthenticated: false,
   isLoading: false,
-  error: null
+  error: null,
 };
 
-// Async thunks
 export const login = createAsyncThunk(
   'auth/login',
   async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
     try {
-      const response = await apiClient.post('/login', { email, password });
-      
+      // Fetch user by email from db.json
+      const response = await apiClient.get(`/users?email=${email}`);
+      const users: User[] = response;
+
+      if (!users || users.length === 0) {
+        return rejectWithValue('User not found');
+      }
+
+      const user = users[0]; // Email should be unique
+      console.log('Entered password:', password);
+      console.log('Stored password:', user.password);
+      console.log('Password match:', user.password === password);
+
+      if (!user.password || user.password !== password) {
+        return rejectWithValue('Invalid email or password');
+      }
+
+      // Remove password from user object before storing
+      const { password: _, ...userWithoutPassword } = user;
+
       // Save to AsyncStorage
-      await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
-      await AsyncStorage.setItem('token', response.data.token);
-      
-      return response.data;
+      await AsyncStorage.setItem('user', JSON.stringify(userWithoutPassword));
+
+      return userWithoutPassword;
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Login failed');
+      const errorMessage = error?.message || error?.toString() || 'Login failed';
+      return rejectWithValue(errorMessage);
     }
   }
 );
-
 export const register = createAsyncThunk(
   'auth/register',
   async (userData: Partial<User> & { password: string }, { rejectWithValue }) => {
     try {
-      const response = await apiClient.post('/users', userData);
-      
+      // Check if email already exists
+      const existingUserResponse = await apiClient.get(`/users?email=${userData.email}`);
+      const existingUsers: User[] = existingUserResponse;
+
+      if (existingUsers.length > 0) {
+        return rejectWithValue('Email already exists');
+      }
+
+      // Remove any undefined fields from userData to avoid issues with JSON-server
+      const cleanUserData = Object.fromEntries(
+        Object.entries(userData).filter(([_, value]) => value !== undefined)
+      );
+
+      // Add the user to db.json
+      const response = await apiClient.post('/users', cleanUserData);
+
+      // Remove password from user object before storing
+      const { password: _, ...userWithoutPassword } = response as User;
+
       // Save to AsyncStorage
-      await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
-      await AsyncStorage.setItem('token', response.data.token);
-      
-      return response.data;
+      await AsyncStorage.setItem('user', JSON.stringify(userWithoutPassword));
+
+      return userWithoutPassword;
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Registration failed');
+      const errorMessage = error?.message || error?.toString() || 'Registration failed';
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -74,19 +104,23 @@ export const updateProfile = createAsyncThunk(
     try {
       const state = getState() as { auth: AuthState };
       const userId = state.auth.user?.id;
-      
+
       if (!userId) {
         return rejectWithValue('User not authenticated');
       }
-      
-      const response = await apiClient.put(`/users/${userId}`, userData);
-      
+
+      // Remove password from userData if present
+      const { password: _, ...cleanUserData } = userData;
+
+      const response = await apiClient.put(`/users/${userId}`, cleanUserData);
+
       // Update AsyncStorage
-      await AsyncStorage.setItem('user', JSON.stringify(response.data));
-      
-      return response.data;
+      await AsyncStorage.setItem('user', JSON.stringify(response));
+
+      return response;
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Profile update failed');
+      const errorMessage = error?.message || error?.toString() || 'Profile update failed';
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -96,10 +130,10 @@ export const logout = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       await AsyncStorage.removeItem('user');
-      await AsyncStorage.removeItem('token');
       return null;
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Logout failed');
+      const errorMessage = error?.message || error?.toString() || 'Logout failed';
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -109,27 +143,26 @@ export const checkAuth = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const user = await AsyncStorage.getItem('user');
-      const token = await AsyncStorage.getItem('token');
-      
-      if (!user || !token) {
+
+      if (!user) {
         return rejectWithValue('Not authenticated');
       }
-      
-      return { user: JSON.parse(user), token };
+
+      return JSON.parse(user) as User;
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Auth check failed');
+      const errorMessage = error?.message || error?.toString() || 'Auth check failed';
+      return rejectWithValue(errorMessage);
     }
   }
 );
 
-// Slice
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
     resetError: (state) => {
       state.error = null;
-    }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -138,33 +171,31 @@ const authSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(login.fulfilled, (state, action: PayloadAction<{ user: User; token: string }>) => {
+      .addCase(login.fulfilled, (state, action: PayloadAction<User>) => {
         state.isLoading = false;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
+        state.user = action.payload;
         state.isAuthenticated = true;
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Register
       .addCase(register.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(register.fulfilled, (state, action: PayloadAction<{ user: User; token: string }>) => {
+      .addCase(register.fulfilled, (state, action: PayloadAction<User>) => {
         state.isLoading = false;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
+        state.user = action.payload;
         state.isAuthenticated = true;
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Update Profile
       .addCase(updateProfile.pending, (state) => {
         state.isLoading = true;
@@ -178,29 +209,30 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Logout
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
-        state.token = null;
         state.isAuthenticated = false;
       })
-      
+      .addCase(logout.rejected, (state, action) => {
+        state.error = action.payload as string;
+      })
+
       // Check Auth
       .addCase(checkAuth.pending, (state) => {
         state.isLoading = true;
       })
-      .addCase(checkAuth.fulfilled, (state, action: PayloadAction<{ user: User; token: string }>) => {
+      .addCase(checkAuth.fulfilled, (state, action: PayloadAction<User>) => {
         state.isLoading = false;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
+        state.user = action.payload;
         state.isAuthenticated = true;
       })
       .addCase(checkAuth.rejected, (state) => {
         state.isLoading = false;
         state.isAuthenticated = false;
       });
-  }
+  },
 });
 
 export const { resetError } = authSlice.actions;
