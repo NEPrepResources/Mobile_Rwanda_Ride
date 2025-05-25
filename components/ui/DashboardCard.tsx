@@ -6,12 +6,15 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 
+// Define the valid MaterialIcons names
+type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
+
 interface DashboardCardProps {
   title: string;
   children: React.ReactNode;
-  viewAllRoute?: string;
+  viewAllRoute?: any; // Changed from string to any to bypass the router type issue
   emptyStateText?: string;
-  emptyStateIcon?: string;
+  emptyStateIcon?: MaterialIconName; 
 }
 
 export default function DashboardCard({
@@ -19,7 +22,7 @@ export default function DashboardCard({
   children,
   viewAllRoute,
   emptyStateText,
-  emptyStateIcon = 'info'
+  emptyStateIcon = 'info',
 }: DashboardCardProps) {
   const { theme } = useSelector((state: RootState) => state.settings);
   

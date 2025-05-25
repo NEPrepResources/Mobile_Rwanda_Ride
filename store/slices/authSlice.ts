@@ -12,6 +12,8 @@ export interface User {
   profilePicture?: string;
   isDriver?: boolean;
   licenseNumber?: string;
+  vehicleType: string;
+  licensePlate: string;
 }
 
 interface AuthState {

@@ -152,9 +152,8 @@ export default function BookRideScreen() {
 
   const closeSuccessModal = () => {
     setIsSuccessModalVisible(false);
-    // Navigate to booking details
     if (currentBooking) {
-      router.push(`/app/bookings/${currentBooking.bookingId}`);
+      router.push(`./bookings/${currentBooking.bookingId}`);
     }
   };
 

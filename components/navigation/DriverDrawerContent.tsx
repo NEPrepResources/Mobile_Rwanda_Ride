@@ -22,7 +22,7 @@ export default function DriverDrawerContent(props: any) {
   
   const handleLogout = () => {
     dispatch(logout()).then(() => {
-      router.replace('/auth/login');
+      router.replace('../../app/(auth)/login');
     });
   };
   

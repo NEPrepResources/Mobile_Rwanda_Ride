@@ -103,7 +103,7 @@ export default function LoginScreen() {
 
         <TouchableOpacity
           style={styles.forgotPassword}
-          onPress={() => router.push('/auth/forgotPassword')}
+          onPress={() => router.push('./forgotPassword')}
         >
           <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
         </TouchableOpacity>
@@ -116,7 +116,7 @@ export default function LoginScreen() {
 
         <View style={styles.registerContainer}>
           <Text style={styles.registerText}>Don't have an account? </Text>
-          <Link href="/auth/signup" asChild>
+          <Link href="./signup" asChild>
             <TouchableOpacity>
               <Text style={styles.registerLink}>Sign Up</Text>
             </TouchableOpacity>

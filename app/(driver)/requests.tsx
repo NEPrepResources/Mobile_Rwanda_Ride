@@ -35,7 +35,7 @@ export default function RideRequestsScreen() {
         styles.requestCard,
         { backgroundColor: theme === 'dark' ? COLORS.DARK_CARD : 'white' }
       ]}
-      onPress={() => router.push(`/driver/requests/${item.bookingId}`)}
+      onPress={() => router.push(`./requests/${item.bookingId}`)}
     >
       <View style={styles.cardHeader}>
         <View style={styles.bookingIdContainer}>
@@ -91,7 +91,7 @@ export default function RideRequestsScreen() {
       <View style={styles.actionButtonsContainer}>
         <TouchableOpacity
           style={styles.viewDetailsButton}
-          onPress={() => router.push(`/driver/requests/${item.bookingId}`)}
+          onPress={() => router.push(`./requests/${item.bookingId}`)}
         >
           <Text style={styles.viewDetailsText}>View Details</Text>
         </TouchableOpacity>

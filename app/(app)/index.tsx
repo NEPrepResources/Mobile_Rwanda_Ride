@@ -81,7 +81,7 @@ export default function HomeScreen() {
       <View style={styles.quickActionsContainer}>
         <TouchableOpacity 
           style={styles.quickActionButton}
-          onPress={() => router.push('/app/bookRide')}
+          onPress={() => router.push('./bookRide')}
         >
           <View style={[styles.iconCircle, { backgroundColor: COLORS.PRIMARY_LIGHT }]}>
             <MaterialIcons name="directions-car" size={24} color="white" />
@@ -91,7 +91,7 @@ export default function HomeScreen() {
         
         <TouchableOpacity 
           style={styles.quickActionButton}
-          onPress={() => router.push('/app/bookings')}
+          onPress={() => router.push('./bookings')}
         >
           <View style={[styles.iconCircle, { backgroundColor: COLORS.SUCCESS_LIGHT }]}>
             <MaterialIcons name="history" size={24} color="white" />
@@ -101,7 +101,7 @@ export default function HomeScreen() {
         
         <TouchableOpacity 
           style={styles.quickActionButton}
-          onPress={() => router.push('/app/vehicles')}
+          onPress={() => router.push('./vehicles')}
         >
           <View style={[styles.iconCircle, { backgroundColor: COLORS.WARNING_LIGHT }]}>
             <MaterialIcons name="car-rental" size={24} color="white" />
@@ -113,7 +113,7 @@ export default function HomeScreen() {
       {/* Recent Bookings */}
       <DashboardCard 
         title="Recent Bookings" 
-        viewAllRoute="/app/bookings"
+        viewAllRoute="./bookings"
         emptyStateText="No bookings yet. Book your first ride!"
         emptyStateIcon="directions-car"
       >
@@ -122,7 +122,7 @@ export default function HomeScreen() {
             <TouchableOpacity
               key={booking.id}
               style={styles.bookingItem}
-              onPress={() => router.push(`/app/bookings/${booking.bookingId}`)}
+              onPress={() => router.push(`./bookings/${booking.bookingId}`)}
             >
               <View style={styles.bookingLeftSection}>
                 <MaterialIcons name="location-on" size={24} color={COLORS.PRIMARY} />
@@ -146,7 +146,7 @@ export default function HomeScreen() {
       {/* Available Vehicles */}
       <DashboardCard 
         title="Available Vehicles" 
-        viewAllRoute="/app/vehicles"
+        viewAllRoute="./vehicles"
         emptyStateText="No vehicles available at the moment"
         emptyStateIcon="car-rental"
       >
@@ -155,7 +155,7 @@ export default function HomeScreen() {
             <TouchableOpacity
               key={vehicle.id}
               style={styles.vehicleItem}
-              onPress={() => router.push(`/app/vehicles/${vehicle.id}`)}
+              onPress={() => router.push(`./vehicles/${vehicle.id}`)}
             >
               <Image 
                 source={{ uri: vehicle.image }} 

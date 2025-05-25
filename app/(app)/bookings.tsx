@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  FlatList, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
   TouchableOpacity,
   ActivityIndicator
 } from 'react-native';
@@ -15,22 +15,23 @@ import { COLORS } from '@/constants/colors';
 import { MaterialIcons } from '@expo/vector-icons';
 
 type BookingStatus = 'All' | 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled' | 'Rejected';
+type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
 export default function BookingsScreen() {
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
   const { bookings, isLoading } = useSelector((state: RootState) => state.bookings);
   const { theme } = useSelector((state: RootState) => state.settings);
-  
+
   const [selectedStatus, setSelectedStatus] = useState<BookingStatus>('All');
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
-  
+
   useEffect(() => {
     if (user) {
       dispatch(fetchBookings({ userId: user.id }));
     }
   }, [dispatch, user]);
-  
+
   useEffect(() => {
     if (selectedStatus === 'All') {
       setFilteredBookings(bookings);
@@ -38,8 +39,8 @@ export default function BookingsScreen() {
       setFilteredBookings(bookings.filter(booking => booking.status === selectedStatus));
     }
   }, [selectedStatus, bookings]);
-  
-  const getStatusIcon = (status: string) => {
+
+  const getStatusIcon = (status: string): MaterialIconName => {
     switch (status) {
       case 'Confirmed': return 'check-circle';
       case 'Pending': return 'pending';
@@ -49,7 +50,7 @@ export default function BookingsScreen() {
       default: return 'help';
     }
   };
-  
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Confirmed': return COLORS.SUCCESS;
@@ -60,14 +61,20 @@ export default function BookingsScreen() {
       default: return COLORS.SECONDARY;
     }
   };
-  
+
+  const handleBookingPress = (bookingId: string) => {
+    router.push({
+      pathname: './bookings/[id]',
+      params: { id: bookingId }
+    });
+  };
   const renderBookingItem = ({ item }: { item: Booking }) => (
     <TouchableOpacity
       style={[
         styles.bookingCard,
         { backgroundColor: theme === 'dark' ? COLORS.DARK_CARD : 'white' }
       ]}
-      onPress={() => router.push(`/app/bookings/${item.bookingId}`)}
+      onPress={() => handleBookingPress(item.bookingId)}
     >
       <View style={styles.cardHeader}>
         <View style={styles.bookingIdContainer}>
@@ -79,7 +86,7 @@ export default function BookingsScreen() {
           <Text style={styles.statusText}>{item.status}</Text>
         </View>
       </View>
-      
+
       <View style={styles.locationContainer}>
         <View style={styles.locationItem}>
           <MaterialIcons name="my-location" size={20} color={COLORS.PRIMARY} />
@@ -95,24 +102,24 @@ export default function BookingsScreen() {
           </Text>
         </View>
       </View>
-      
+
       <View style={styles.bookingDetails}>
         <View style={styles.detailItem}>
           <MaterialIcons name="directions-car" size={16} color={COLORS.SECONDARY} />
           <Text style={styles.detailText}>{item.rideType}</Text>
         </View>
-        
+
         <View style={styles.detailItem}>
           <MaterialIcons name="person" size={16} color={COLORS.SECONDARY} />
           <Text style={styles.detailText}>{item.passengers} Passenger{item.passengers > 1 ? 's' : ''}</Text>
         </View>
-        
+
         <View style={styles.detailItem}>
           <MaterialIcons name="access-time" size={16} color={COLORS.SECONDARY} />
           <Text style={styles.detailText}>{item.duration} hr{item.duration > 1 ? 's' : ''}</Text>
         </View>
       </View>
-      
+
       <View style={styles.cardFooter}>
         <Text style={styles.dateText}>
           {new Date(item.dateTime).toLocaleString()}
@@ -121,10 +128,10 @@ export default function BookingsScreen() {
       </View>
     </TouchableOpacity>
   );
-  
+
   const renderStatusFilter = () => {
     const statuses: BookingStatus[] = ['All', 'Pending', 'Confirmed', 'Completed', 'Cancelled', 'Rejected'];
-    
+
     return (
       <View style={styles.filterContainer}>
         <FlatList
@@ -155,20 +162,20 @@ export default function BookingsScreen() {
       </View>
     );
   };
-  
+
   const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
       <MaterialIcons name="directions-car" size={60} color={COLORS.SECONDARY_LIGHT} />
       <Text style={styles.emptyText}>No bookings found</Text>
       <Text style={styles.emptySubtext}>
-        {selectedStatus === 'All' 
+        {selectedStatus === 'All'
           ? 'Start by booking your first ride!'
           : `No ${selectedStatus.toLowerCase()} bookings`}
       </Text>
       {selectedStatus === 'All' && (
         <TouchableOpacity
           style={styles.bookNowButton}
-          onPress={() => router.push('/app/bookRide')}
+          onPress={() => router.push('/(app)/bookRide')}
         >
           <Text style={styles.bookNowText}>Book Now</Text>
         </TouchableOpacity>
@@ -177,16 +184,16 @@ export default function BookingsScreen() {
   );
 
   return (
-    <View 
+    <View
       style={[
         styles.container,
         { backgroundColor: theme === 'dark' ? COLORS.DARK_BG : COLORS.LIGHT_BG }
       ]}
     >
       <Text style={styles.title}>My Bookings</Text>
-      
+
       {renderStatusFilter()}
-      
+
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.PRIMARY} />

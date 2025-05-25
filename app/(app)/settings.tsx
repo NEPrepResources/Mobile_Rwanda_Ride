@@ -39,7 +39,7 @@ export default function SettingsScreen() {
   
   const handleLogout = () => {
     dispatch(logout()).then(() => {
-      router.replace('/auth/login');
+      router.replace('../(auth)/login');
     });
   };
   

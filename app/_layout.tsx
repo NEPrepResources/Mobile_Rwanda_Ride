@@ -6,7 +6,6 @@ import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { Provider } from 'react-redux';
 import { store } from '@/store/store';
 import { useColorScheme } from 'react-native';
-import { CustomDrawerContent } from '@/components/navigation/CustomDrawerContent';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export default function RootLayout() {

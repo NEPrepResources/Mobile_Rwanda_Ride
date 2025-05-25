@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  ScrollView, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
   Switch,
   Image
 } from 'react-native';
@@ -16,7 +16,7 @@ import { register, resetError } from '@/store/slices/authSlice';
 import { RootState, AppDispatch } from '@/store/store';
 import FormInput from '@/components/ui/FormInput';
 import PrimaryButton from '@/components/ui/PrimaryButton';
-import { 
+import {
   validateFullName,
   validatePhone,
   validateEmail,
@@ -76,7 +76,7 @@ export default function SignupScreen() {
 
   const selectImage = async () => {
     try {
-      const result = await ImagePicker.launchImagePickerAsync({
+      const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
@@ -84,16 +84,16 @@ export default function SignupScreen() {
       });
 
       if (!result.canceled) {
-        // Check file size (5MB limit)
-        const response = await fetch(result.assets[0].uri);
+        const uri = result.assets[0].uri;
+        const response = await fetch(uri);
         const blob = await response.blob();
-        
+
         if (blob.size > 5 * 1024 * 1024) {
           setProfilePictureError('Image size must be less than 5MB');
           return;
         }
-        
-        setProfilePicture(result.assets[0].uri);
+
+        setProfilePicture(uri);
         setProfilePictureError('');
       }
     } catch (error) {
@@ -103,64 +103,42 @@ export default function SignupScreen() {
 
   const validateForm = () => {
     let isValid = true;
-    
-    const fullNameValidation = validateFullName(fullName);
-    if (!fullNameValidation.isValid) {
-      setFullNameError(fullNameValidation.error);
-      isValid = false;
-    } else {
-      setFullNameError('');
-    }
-    
-    const phoneValidation = validatePhone(phone);
-    if (!phoneValidation.isValid) {
-      setPhoneError(phoneValidation.error);
-      isValid = false;
-    } else {
-      setPhoneError('');
-    }
-    
-    const emailValidation = validateEmail(email);
-    if (!emailValidation.isValid) {
-      setEmailError(emailValidation.error);
-      isValid = false;
-    } else {
-      setEmailError('');
-    }
-    
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.isValid) {
-      setPasswordError(passwordValidation.error);
-      isValid = false;
-    } else {
-      setPasswordError('');
-    }
-    
-    const addressValidation = validateAddress(address);
-    if (!addressValidation.isValid) {
-      setAddressError(addressValidation.error);
-      isValid = false;
-    } else {
-      setAddressError('');
-    }
-    
+
+    const validations = [
+      { validator: validateFullName, value: fullName, setError: setFullNameError },
+      { validator: validatePhone, value: phone, setError: setPhoneError },
+      { validator: validateEmail, value: email, setError: setEmailError },
+      { validator: validatePassword, value: password, setError: setPasswordError },
+      { validator: validateAddress, value: address, setError: setAddressError },
+    ];
+
+    validations.forEach(({ validator, value, setError }) => {
+      const result = validator(value);
+      if (!result.isValid) {
+        setError(result.error);
+        isValid = false;
+      } else {
+        setError('');
+      }
+    });
+
     if (isDriver) {
-      const licenseValidation = validateLicenseNumber(licenseNumber);
-      if (!licenseValidation.isValid) {
-        setLicenseNumberError(licenseValidation.error);
+      const result = validateLicenseNumber(licenseNumber);
+      if (!result.isValid) {
+        setLicenseNumberError(result.error);
         isValid = false;
       } else {
         setLicenseNumberError('');
       }
     }
-    
+
     if (!profilePicture) {
       setProfilePictureError('Profile picture is required');
       isValid = false;
     } else {
       setProfilePictureError('');
     }
-    
+
     return isValid;
   };
 
@@ -172,11 +150,11 @@ export default function SignupScreen() {
         email,
         password,
         address,
-        profilePicture,
+        profilePicture: profilePicture ?? undefined, 
         isDriver,
         ...(isDriver && { licenseNumber })
       };
-      
+
       dispatch(register(userData));
     }
   };
@@ -184,7 +162,6 @@ export default function SignupScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <LogoHeader small />
-      
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
         <Text style={styles.title}>Create Account</Text>
         <Text style={styles.subtitle}>Join RwandaRide today</Text>
@@ -209,54 +186,14 @@ export default function SignupScreen() {
               </View>
             )}
           </TouchableOpacity>
-          {profilePictureError ? (
-            <Text style={styles.errorText}>{profilePictureError}</Text>
-          ) : null}
+          {profilePictureError && <Text style={styles.errorText}>{profilePictureError}</Text>}
         </View>
 
-        <FormInput
-          label="Full Name"
-          value={fullName}
-          onChangeText={setFullName}
-          placeholder="Enter your full name"
-          error={fullNameError}
-        />
-
-        <FormInput
-          label="Phone Number"
-          value={phone}
-          onChangeText={setPhone}
-          placeholder="Enter your phone number"
-          keyboardType="phone-pad"
-          error={phoneError}
-        />
-
-        <FormInput
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Enter your email"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          error={emailError}
-        />
-
-        <FormInput
-          label="Password"
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Create a password"
-          secureTextEntry
-          error={passwordError}
-        />
-
-        <FormInput
-          label="Address"
-          value={address}
-          onChangeText={setAddress}
-          placeholder="Enter your address"
-          error={addressError}
-        />
+        <FormInput label="Full Name" value={fullName} onChangeText={setFullName} placeholder="Enter your full name" error={fullNameError} />
+        <FormInput label="Phone Number" value={phone} onChangeText={setPhone} placeholder="Enter your phone number" keyboardType="phone-pad" error={phoneError} />
+        <FormInput label="Email" value={email} onChangeText={setEmail} placeholder="Enter your email" keyboardType="email-address" autoCapitalize="none" error={emailError} />
+        <FormInput label="Password" value={password} onChangeText={setPassword} placeholder="Create a password" secureTextEntry error={passwordError} />
+        <FormInput label="Address" value={address} onChangeText={setAddress} placeholder="Enter your address" error={addressError} />
 
         {isDriver && (
           <FormInput
@@ -268,15 +205,11 @@ export default function SignupScreen() {
           />
         )}
 
-        <PrimaryButton
-          title={isLoading ? 'Creating Account...' : 'Create Account'}
-          onPress={handleRegister}
-          disabled={isLoading}
-        />
+        <PrimaryButton title={isLoading ? 'Creating Account...' : 'Create Account'} onPress={handleRegister} disabled={isLoading} />
 
         <View style={styles.loginContainer}>
           <Text style={styles.loginText}>Already have an account? </Text>
-          <Link href="/auth/login" asChild>
+          <Link href="./login" asChild>
             <TouchableOpacity>
               <Text style={styles.loginLink}>Sign In</Text>
             </TouchableOpacity>
@@ -368,9 +301,11 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   loginText: {
+    fontSize: 14,
     color: COLORS.SECONDARY,
   },
   loginLink: {
+    fontSize: 14,
     color: COLORS.PRIMARY,
     fontWeight: 'bold',
   },
@@ -383,11 +318,12 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
     color: COLORS.ERROR,
+    marginBottom: 10,
   },
   modalMessage: {
-    fontSize: 16,
+    fontSize: 14,
+    color: COLORS.SECONDARY,
     marginBottom: 20,
     textAlign: 'center',
   },
@@ -395,10 +331,11 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.PRIMARY,
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 5,
+    borderRadius: 8,
   },
   modalButtonText: {
     color: 'white',
     fontWeight: 'bold',
+    fontSize: 14,
   },
 });

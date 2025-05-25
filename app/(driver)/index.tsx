@@ -123,11 +123,10 @@ export default function DriverDashboardScreen() {
         </View>
       </View>
       
-      {/* Quick Actions */}
       <View style={styles.quickActionsContainer}>
         <TouchableOpacity 
           style={styles.quickActionButton}
-          onPress={() => router.push('/driver/requests')}
+          onPress={() => router.push('./requests')}
         >
           <View style={[styles.iconCircle, { backgroundColor: COLORS.PRIMARY_LIGHT }]}>
             <MaterialIcons name="pending-actions" size={24} color="white" />
@@ -137,7 +136,7 @@ export default function DriverDashboardScreen() {
         
         <TouchableOpacity 
           style={styles.quickActionButton}
-          onPress={() => router.push('/driver/history')}
+          onPress={() => router.push('./history')}
         >
           <View style={[styles.iconCircle, { backgroundColor: COLORS.SUCCESS_LIGHT }]}>
             <MaterialIcons name="history" size={24} color="white" />
@@ -147,7 +146,7 @@ export default function DriverDashboardScreen() {
         
         <TouchableOpacity 
           style={styles.quickActionButton}
-          onPress={() => router.push('/driver/profile')}
+          onPress={() => router.push('./profile')}
         >
           <View style={[styles.iconCircle, { backgroundColor: COLORS.WARNING_LIGHT }]}>
             <MaterialIcons name="person" size={24} color="white" />
@@ -159,7 +158,7 @@ export default function DriverDashboardScreen() {
       {/* Pending Ride Requests */}
       <DashboardCard 
         title="New Ride Requests" 
-        viewAllRoute="/driver/requests"
+        viewAllRoute="./requests"
         emptyStateText="No pending requests at the moment"
         emptyStateIcon="pending-actions"
       >
@@ -168,7 +167,7 @@ export default function DriverDashboardScreen() {
             <TouchableOpacity
               key={request.id}
               style={styles.requestItem}
-              onPress={() => router.push(`/driver/requests/${request.bookingId}`)}
+              onPress={() => router.push(`./requests/${request.bookingId}`)}
             >
               <View style={styles.requestLeftSection}>
                 <MaterialIcons name="location-on" size={24} color={COLORS.PRIMARY} />
@@ -193,7 +192,7 @@ export default function DriverDashboardScreen() {
       {/* Active Rides */}
       <DashboardCard 
         title="Active Rides" 
-        viewAllRoute="/driver/history"
+        viewAllRoute="./history"
         emptyStateText="No active rides at the moment"
         emptyStateIcon="local-taxi"
       >
@@ -202,7 +201,7 @@ export default function DriverDashboardScreen() {
             <TouchableOpacity
               key={booking.id}
               style={styles.bookingItem}
-              onPress={() => router.push(`/driver/history/${booking.bookingId}`)}
+              onPress={() => router.push(`./history/${booking.bookingId}`)}
             >
               <View style={styles.bookingLeftSection}>
                 <MaterialIcons name="location-on" size={24} color={COLORS.PRIMARY} />
