@@ -204,6 +204,17 @@
       "profilePicture": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540anonymous%252FRwandaRide-e805ea96-fc4f-4a55-8f63-9ff3c395d227/ImagePicker/7cc353d0-61f6-462e-ae77-fea61a723905.jpeg",
       "isDriver": false,
       "id": "XoDfV_a"
+    },
+    {
+      "fullName": "Gisele",
+      "phone": "0788748410",
+      "email": "gisele@gmail.com",
+      "password": "yezu@Driver123",
+      "address": "Mukamira market",
+      "profilePicture": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540anonymous%252FRwandaRide-e805ea96-fc4f-4a55-8f63-9ff3c395d227/ImagePicker/9229545c-b97b-4f4f-bec2-57cbe19698c0.jpeg",
+      "isDriver": true,
+      "licenseNumber": "A5479382",
+      "id": "Qh8RcxN"
     }
   ],
   "bookings": [

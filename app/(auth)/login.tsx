@@ -34,9 +34,9 @@ export default function LoginScreen() {
             text: 'OK',
             onPress: () => {
               if (user.isDriver) {
-                router.replace('/(driver)');
+                router.replace('../(driver)');
               } else {
-                router.replace('/(app)');
+                router.replace('../(app)');
               }
             },
           },

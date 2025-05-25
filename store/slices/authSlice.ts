@@ -34,7 +34,6 @@ export const login = createAsyncThunk(
   'auth/login',
   async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
     try {
-      // Fetch user by email from db.json
       const response = await apiClient.get(`/users?email=${email}`);
       const users: User[] = response;
 
@@ -42,7 +41,7 @@ export const login = createAsyncThunk(
         return rejectWithValue('User not found');
       }
 
-      const user = users[0]; // Email should be unique
+      const user = users[0];
       console.log('Entered password:', password);
       console.log('Stored password:', user.password);
       console.log('Password match:', user.password === password);
@@ -64,11 +63,11 @@ export const login = createAsyncThunk(
     }
   }
 );
+
 export const register = createAsyncThunk(
   'auth/register',
   async (userData: Partial<User> & { password: string }, { rejectWithValue }) => {
     try {
-      // Check if email already exists
       const existingUserResponse = await apiClient.get(`/users?email=${userData.email}`);
       const existingUsers: User[] = existingUserResponse;
 
@@ -76,21 +75,21 @@ export const register = createAsyncThunk(
         return rejectWithValue('Email already exists');
       }
 
-      // Remove any undefined fields from userData to avoid issues with JSON-server
+      // Clean user data
       const cleanUserData = Object.fromEntries(
         Object.entries(userData).filter(([_, value]) => value !== undefined)
       );
 
-      // Add the user to db.json
+      // Create user in db.json
       const response = await apiClient.post('/users', cleanUserData);
 
-      // Remove password from user object before storing
+      // Remove password before storing (but don't store in AsyncStorage yet)
       const { password: _, ...userWithoutPassword } = response as User;
 
-      // Save to AsyncStorage
-      await AsyncStorage.setItem('user', JSON.stringify(userWithoutPassword));
-
-      return userWithoutPassword;
+      return { 
+        success: true,
+        user: userWithoutPassword 
+      };
     } catch (error: any) {
       const errorMessage = error?.message || error?.toString() || 'Registration failed';
       return rejectWithValue(errorMessage);
@@ -182,19 +181,17 @@ const authSlice = createSlice({
       })
 
       // Register
-      .addCase(register.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(register.fulfilled, (state, action: PayloadAction<User>) => {
-        state.isLoading = false;
-        state.user = action.payload;
-        state.isAuthenticated = true;
-      })
-      .addCase(register.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      })
+     .addCase(register.pending, (state) => {
+      state.isLoading = true;
+      state.error = null;
+    })
+    .addCase(register.fulfilled, (state, action) => {
+      state.isLoading = false;
+    })
+    .addCase(register.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload as string;
+    })
 
       // Update Profile
       .addCase(updateProfile.pending, (state) => {
