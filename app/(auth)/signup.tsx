@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigation } from 'expo-router';
 import {
   View,
   Text,
@@ -17,6 +18,7 @@ import { register, resetError } from '@/store/slices/authSlice';
 import { RootState, AppDispatch } from '@/store/store';
 import FormInput from '@/components/ui/FormInput';
 import PrimaryButton from '@/components/ui/PrimaryButton';
+import { BackHandler } from 'react-native';
 import {
   validateFullName,
   validatePhone,
@@ -46,6 +48,7 @@ export default function SignupScreen() {
   const [addressError, setAddressError] = useState('');
   const [licenseNumberError, setLicenseNumberError] = useState('');
   const [profilePictureError, setProfilePictureError] = useState('');
+  const navigation = useNavigation();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
 
@@ -66,36 +69,6 @@ export default function SignupScreen() {
     })();
   }, []);
 
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      Alert.alert(
-        'Registration Successful',
-        'Your account has been created successfully!',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              setFullName('');
-              setPhone('');
-              setEmail('');
-              setPassword('');
-              setAddress('');
-              setLicenseNumber('');
-              setProfilePicture(undefined);
-              setIsDriver(false);
-              router.replace('./login');
-            }
-          }
-        ]
-      );
-    }
-  }, [isAuthenticated, user]);
-
-  useEffect(() => {
-    if (error) {
-      setIsModalVisible(true);
-    }
-  }, [error]);
 
   const closeModal = () => {
     setIsModalVisible(false);
@@ -103,24 +76,23 @@ export default function SignupScreen() {
   };
 
   const selectImage = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-      });
+  try {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images, 
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
 
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const uri = result.assets[0].uri;
-        setProfilePicture(uri);
-        setProfilePictureError('');
-      }
-    } catch (error) {
-      console.log('Image picker error:', error);
-      setProfilePictureError('Failed to select image');
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      setProfilePicture(result.assets[0].uri);
+      setProfilePictureError('');
     }
-  };
+  } catch (error) {
+    console.log('Image picker error:', error);
+    setProfilePictureError('Failed to select image');
+  }
+};
 
   const validateForm = () => {
     let isValid = true;
@@ -163,22 +135,59 @@ export default function SignupScreen() {
     return isValid;
   };
 
-  const handleRegister = () => {
-    if (validateForm()) {
-      const userData = {
-        fullName,
-        phone,
-        email,
-        password,
-        address,
-        profilePicture: profilePicture || undefined, 
-        isDriver,
-        ...(isDriver && { licenseNumber })
-      };
+useEffect(() => {
+  if (error) {
+    setIsModalVisible(true);
+  }
+}, [error]);
 
-      dispatch(register(userData));
+useEffect(() => {
+  const backHandler = BackHandler.addEventListener('hardwareBackPress', () => true);
+  return () => backHandler.remove();
+}, []);
+
+const handleRegister = async () => {
+  if (validateForm()) {
+    const userData = {
+      fullName,
+      phone,
+      email,
+      password,
+      address,
+      profilePicture: profilePicture || undefined, 
+      isDriver,
+      ...(isDriver && { licenseNumber })
+    };
+
+    try {
+      const result = await dispatch(register(userData)).unwrap();
+      
+      if (result.success) {
+        Alert.alert(
+          'Registration Successful',
+          'Your account has been created successfully!',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                setFullName('');
+                setPhone('');
+                setEmail('');
+                setPassword('');
+                setAddress('');
+                setLicenseNumber('');
+                setProfilePicture(undefined);
+                setIsDriver(false);
+                router.push('/(auth)/login');
+              }
+            }
+          ]
+        );
+      }
+    } catch (error) {
     }
-  };
+  }
+};
 
   return (
     <SafeAreaView style={styles.safeArea}>
