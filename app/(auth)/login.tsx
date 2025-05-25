@@ -26,7 +26,6 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      // Show alert before navigating
       Alert.alert(
         'Success',
         'Login Successful',
@@ -34,7 +33,6 @@ export default function LoginScreen() {
           {
             text: 'OK',
             onPress: () => {
-              // Navigate after user acknowledges the alert
               if (user.isDriver) {
                 router.replace('/(driver)');
               } else {
