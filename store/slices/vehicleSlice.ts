@@ -2,7 +2,6 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { apiClient } from '@/utils/apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Types
 export interface Vehicle {
   id: string;
   vehicleId: string;
@@ -22,7 +21,6 @@ interface VehicleState {
   error: string | null;
 }
 
-// Initial state
 const initialState: VehicleState = {
   vehicles: [],
   filteredVehicles: [],
@@ -31,24 +29,19 @@ const initialState: VehicleState = {
   error: null
 };
 
-// Async thunks
 export const fetchVehicles = createAsyncThunk(
   'vehicles/fetchVehicles',
   async (_, { rejectWithValue }) => {
     try {
       const response = await apiClient.get('/vehicles');
       
-      // Cache vehicles
-      await AsyncStorage.setItem('vehicles', JSON.stringify(response.data));
-      
-      return response.data;
-    } catch (error: any) {
-      // Try to get cached data if API fails
-      const cachedData = await AsyncStorage.getItem('vehicles');
-      if (cachedData) {
-        return JSON.parse(cachedData);
+      if (!response || !Array.isArray(response)) {
+        return [];
       }
       
+      return response;
+    } catch (error: any) {
+      console.error('API Error:', error);
       return rejectWithValue(error.message || 'Failed to fetch vehicles');
     }
   }
@@ -66,7 +59,6 @@ export const fetchVehicleById = createAsyncThunk(
   }
 );
 
-// Slice
 const vehicleSlice = createSlice({
   name: 'vehicles',
   initialState,

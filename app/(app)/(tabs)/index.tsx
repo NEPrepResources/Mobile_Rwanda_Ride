@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import React, { useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { router } from 'expo-router';
 import { fetchBookings } from '@/store/slices/bookingSlice';
@@ -11,26 +11,68 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
-  const dispatch = useDispatch<AppDispatch>();
+ const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
-  const { bookings } = useSelector((state: RootState) => state.bookings);
-  const { vehicles } = useSelector((state: RootState) => state.vehicles);
+  const { bookings, isLoading: bookingsLoading, error: bookingsError } = useSelector((state: RootState) => state.bookings);
+  const { vehicles, isLoading: vehiclesLoading, error: vehiclesError } = useSelector((state: RootState) => state.vehicles);
   const { theme } = useSelector((state: RootState) => state.settings);
 
-  useEffect(() => {
-    if (user) {
+ useEffect(() => {
+    if (user?.id) {
+      console.log('Fetching data for user:', user.id);
       dispatch(fetchBookings({ userId: user.id }));
       dispatch(fetchVehicles());
     }
   }, [dispatch, user]);
 
-  const recentBookings = [...bookings]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 3);
+  const isLoading = bookingsLoading || vehiclesLoading;
+  const error = bookingsError || vehiclesError;
+
+ const recentBookings = useMemo(() => {
+    if (!bookings || !Array.isArray(bookings)) return [];
+    return [...bookings]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 3);
+  }, [bookings]);
   
-  const availableVehicles = vehicles
-    .filter(vehicle => vehicle.available)
-    .slice(0, 3);
+ const availableVehicles = useMemo(() => {
+    if (!vehicles || !Array.isArray(vehicles)) return [];
+    return vehicles
+      .filter(vehicle => vehicle.available)
+      .slice(0, 3);
+  }, [vehicles]);
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme === 'dark' ? COLORS.DARK_BG : COLORS.LIGHT_BG }]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.PRIMARY} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme === 'dark' ? COLORS.DARK_BG : COLORS.LIGHT_BG }]}>
+        <View style={styles.errorContainer}>
+          <MaterialIcons name="error" size={48} color={COLORS.ERROR} />
+          <Text style={styles.errorText}>Failed to load data</Text>
+          <Text style={styles.errorSubText}>{error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={() => {
+              if (user?.id) {
+                dispatch(fetchBookings({ userId: user.id }));
+                dispatch(fetchVehicles());
+              }
+            }}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -173,7 +215,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-    safeArea: {
+  safeArea: {
     flex: 1,
     backgroundColor: COLORS.LIGHT_BG, 
   },
@@ -308,5 +350,37 @@ const styles = StyleSheet.create({
   vehicleInfo: {
     fontSize: 12,
     color: COLORS.SECONDARY,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 18,
+    color: COLORS.ERROR,
+    marginVertical: 10,
+  },
+  errorSubText: {
+    fontSize: 14,
+    color: COLORS.SECONDARY,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: COLORS.PRIMARY,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 16,
   },
 });

@@ -2,7 +2,6 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { apiClient } from '@/utils/apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Types
 export interface Booking {
   id: string;
   bookingId: string;
@@ -27,7 +26,6 @@ interface BookingState {
   error: string | null;
 }
 
-// Initial state
 const initialState: BookingState = {
   bookings: [],
   currentBooking: null,
@@ -35,19 +33,16 @@ const initialState: BookingState = {
   error: null
 };
 
-// Pricing constants
 const PRICING = {
   Economy: 500, // RWF per km
   Premium: 800, // RWF per km
   Shared: 300   // RWF per km
 };
 
-// Helper function to calculate booking cost
 export const calculateCost = (rideType: 'Economy' | 'Premium' | 'Shared', distance: number = 5) => {
   return PRICING[rideType] * distance;
 };
 
-// Generate a random 10-character booking ID
 export const generateBookingId = () => {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let result = '';
@@ -57,7 +52,6 @@ export const generateBookingId = () => {
   return result;
 };
 
-// Async thunks
 export const createBooking = createAsyncThunk(
   'bookings/createBooking',
   async (bookingData: Partial<Booking>, { rejectWithValue, getState }) => {
@@ -95,10 +89,7 @@ export const createBooking = createAsyncThunk(
 
 export const fetchBookings = createAsyncThunk(
   'bookings/fetchBookings',
-  async (
-    { userId, status }: { userId?: string; status?: string },
-    { rejectWithValue }
-  ) => {
+  async ({ userId, status }: { userId?: string; status?: string }, { rejectWithValue }) => {
     try {
       let url = '/bookings';
       const params = [];
@@ -112,26 +103,14 @@ export const fetchBookings = createAsyncThunk(
       
       const response = await apiClient.get(url);
       
-      // Cache bookings
-      await AsyncStorage.setItem('bookings', JSON.stringify(response.data));
-      
-      return response.data;
-    } catch (error: any) {
-      // Try to get cached data if API fails
-      const cachedData = await AsyncStorage.getItem('bookings');
-      if (cachedData) {
-        const bookings = JSON.parse(cachedData);
-        // Filter based on params if needed
-        let filtered = bookings;
-        if (userId) {
-          filtered = filtered.filter((b: Booking) => b.userId === userId);
-        }
-        if (status) {
-          filtered = filtered.filter((b: Booking) => b.status === status);
-        }
-        return filtered;
+      // Return empty array if no data
+      if (!response || !Array.isArray(response)) {
+        return [];
       }
       
+      return response;
+    } catch (error: any) {
+      console.error('API Error:', error);
       return rejectWithValue(error.message || 'Failed to fetch bookings');
     }
   }
@@ -141,7 +120,6 @@ export const fetchDriverRequests = createAsyncThunk(
   'bookings/fetchDriverRequests',
   async (_, { rejectWithValue }) => {
     try {
-      // Fetch pending bookings that don't have a driver assigned
       const response = await apiClient.get('/bookings?status=Pending');
       
       return response.data;
@@ -193,9 +171,6 @@ export const cancelBooking = createAsyncThunk(
     try {
       const response = await apiClient.patch(`/bookings/${id}`, { status: 'Cancelled' });
       
-      // Update cache
-      await updateBookingCache(response.data);
-      
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.message || 'Failed to cancel booking');
@@ -236,7 +211,6 @@ export const respondToBooking = createAsyncThunk(
   }
 );
 
-// Helper function to update the cache for a specific booking
 const updateBookingCache = async (booking: Booking) => {
   try {
     const cachedData = await AsyncStorage.getItem('bookings');
@@ -257,7 +231,6 @@ const updateBookingCache = async (booking: Booking) => {
   }
 };
 
-// Slice
 const bookingSlice = createSlice({
   name: 'bookings',
   initialState,

@@ -1,33 +1,27 @@
 const API_BASE_URL = 'http://10.12.75.56:5000';
 
 const handleResponse = async (response: Response) => {
-  const text = await response.text();
-  let data;
-  try {
-    data = text && JSON.parse(text);
-  } catch (error) {
-    return Promise.reject(`Failed to parse response: ${text || 'Empty response'}`);
-  }
-
   if (!response.ok) {
-    const error = (data && data.message) || response.statusText || 'Unknown error';
-    return Promise.reject(error);
+    const error = await response.text();
+    throw new Error(error || 'Request failed');
   }
-
-  return data;
+  
+  try {
+    return await response.json();
+  } catch (error) {
+    return {}; 
+  }
 };
 
 export const apiClient = {
-  async get(endpoint: string) {
-    const requestOptions = {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    };
-
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, requestOptions);
-    return handleResponse(response);
+ async get(endpoint: string) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`);
+      return handleResponse(response);
+    } catch (error) {
+      console.error('GET Error:', error);
+      throw error;
+    }
   },
 
   async post(endpoint: string, body: any = {}) {
