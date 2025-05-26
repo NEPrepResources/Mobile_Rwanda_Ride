@@ -39,7 +39,7 @@ export default function SettingsScreen() {
   
   const handleLogout = () => {
     dispatch(logout()).then(() => {
-      router.replace('../(auth)/login');
+      router.push('/(auth)/login');
     });
   };
   
@@ -95,7 +95,6 @@ export default function SettingsScreen() {
     >
       <Text style={styles.title}>Settings</Text>
       
-      {/* Theme Settings */}
       <View 
         style={[
           styles.section,
@@ -113,7 +112,6 @@ export default function SettingsScreen() {
         </View>
       </View>
       
-      {/* Language Settings */}
       <View 
         style={[
           styles.section,
@@ -132,7 +130,6 @@ export default function SettingsScreen() {
         </View>
       </View>
       
-      {/* Notification Settings */}
       <View 
         style={[
           styles.section,
@@ -162,7 +159,6 @@ export default function SettingsScreen() {
         </View>
       </View>
       
-      {/* Account Actions */}
       <View 
         style={[
           styles.section,

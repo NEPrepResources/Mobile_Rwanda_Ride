@@ -820,6 +820,62 @@
       "status": "Pending",
       "createdAt": "2025-05-25T22:39:01.258Z",
       "id": "YAkxnVu"
+    },
+    {
+      "pickupLocation": "Kabuye",
+      "destination": "Kagugu",
+      "rideType": "Economy",
+      "passengers": 1,
+      "dateTime": "2025-05-26T16:00:00.000Z",
+      "duration": 1,
+      "bookingId": "A960YAZ7B2",
+      "userId": "u1",
+      "cost": 2500,
+      "status": "Pending",
+      "createdAt": "2025-05-25T22:52:49.774Z",
+      "id": "RMyNtaM"
+    },
+    {
+      "pickupLocation": "Kabuga",
+      "destination": "Masaka",
+      "rideType": "Economy",
+      "passengers": 1,
+      "dateTime": "2025-05-26T16:00:00.000Z",
+      "duration": 1,
+      "bookingId": "H6N577NCV9",
+      "userId": "u1",
+      "cost": 2500,
+      "status": "Pending",
+      "createdAt": "2025-05-25T23:55:43.343Z",
+      "id": "gAsVR3l"
+    },
+    {
+      "pickupLocation": "Kabuga",
+      "destination": "Masaka",
+      "rideType": "Economy",
+      "passengers": 1,
+      "dateTime": "2025-05-26T16:00:00.000Z",
+      "duration": 1,
+      "bookingId": "IZFJ1Q0TIE",
+      "userId": "u1",
+      "cost": 2500,
+      "status": "Pending",
+      "createdAt": "2025-05-25T23:55:43.844Z",
+      "id": "Gm6HJvS"
+    },
+    {
+      "pickupLocation": "Kabuga",
+      "destination": "Masaka",
+      "rideType": "Economy",
+      "passengers": 1,
+      "dateTime": "2025-05-26T16:00:00.000Z",
+      "duration": 1,
+      "bookingId": "VVP2A4L8GA",
+      "userId": "u1",
+      "cost": 2500,
+      "status": "Pending",
+      "createdAt": "2025-05-25T23:55:47.053Z",
+      "id": "bS4ihTu"
     }
   ],
   "vehicles": [
@@ -1023,7 +1079,7 @@
       "id": 1
     },
     {
-      "email": "john.mugabo@gmail.com",
+      "email": "  ",
       "password": "Password123!",
       "id": 2
     },

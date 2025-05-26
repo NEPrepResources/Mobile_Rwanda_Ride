@@ -77,7 +77,6 @@ export const createBooking = createAsyncThunk(
       
       const response = await apiClient.post('/bookings', newBooking);
       
-      // Update cache
       await updateBookingCache(response.data);
       
       return response.data;

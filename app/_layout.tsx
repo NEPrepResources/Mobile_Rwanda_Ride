@@ -9,8 +9,7 @@ export default function RootLayout() {
     const backHandler = BackHandler.addEventListener(
       'hardwareBackPress',
       () => {
-        // You can add custom back button handling here if needed
-        return false; // Let the default back button behavior
+        return false; 
       }
     );
 
@@ -35,3 +34,4 @@ export default function RootLayout() {
     </Provider>
   );
 }
+

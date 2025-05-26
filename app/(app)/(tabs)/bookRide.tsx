@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+
 import {
   View,
   Text,
@@ -62,7 +63,7 @@ export default function BookRideScreen() {
 
   useEffect(() => {
     console.log('currentBooking changed:', currentBooking);
-    if (currentBooking) {
+    if (currentBooking?.bookingId) {
       setIsSuccessModalVisible(true);
     }
   }, [currentBooking]);
@@ -150,18 +151,33 @@ export default function BookRideScreen() {
       }));
     }
   };
+  const resetForm = () => {
+    setPickupLocation('');
+    setDestination('');
+    setRideType('Economy');
+    setPassengers('1');
+    setDateTime(new Date());
+    setDuration('1');
+    setFormErrors({
+      pickupLocation: '',
+      destination: '',
+      rideType: '',
+      passengers: '',
+      dateTime: '',
+      duration: '',
+    });
+  };
 
   const closeSuccessModal = () => {
     setIsSuccessModalVisible(false);
-    if (currentBooking) {
-      router.push(`./bookings/${currentBooking.bookingId}`);
-      dispatch(resetBookingState()); // Reset state after navigation
-    }
+    resetForm();
+    dispatch(resetBookingState());
+    router.push('/bookings');
   };
 
   const closeErrorModal = () => {
     setIsErrorModalVisible(false);
-    dispatch(resetBookingState()); // Reset error state
+    dispatch(resetBookingState());
   };
 
   const showDateTimePicker = (mode: 'date' | 'time') => {
@@ -171,6 +187,7 @@ export default function BookRideScreen() {
       setShowTimePicker(true);
     }
   };
+
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -299,12 +316,7 @@ export default function BookRideScreen() {
           />
         </View>
 
-        <Modal
-          isVisible={isSuccessModalVisible}
-          onBackdropPress={closeSuccessModal}
-          animationIn="slideInUp"
-          animationOut="slideOutDown"
-        >
+        <Modal isVisible={isSuccessModalVisible} onBackdropPress={closeSuccessModal}>
           <View style={styles.modalContainer}>
             <View style={styles.successIconContainer}>
               <MaterialIcons name="check-circle" size={60} color={COLORS.SUCCESS} />
@@ -313,25 +325,16 @@ export default function BookRideScreen() {
             <Text style={styles.modalMessage}>
               Your booking has been created successfully.
             </Text>
-            {currentBooking && (
+            {currentBooking?.bookingId && (
               <View style={styles.bookingDetailsContainer}>
-                <Text style={styles.bookingDetailsTitle}>Booking Details:</Text>
                 <Text style={styles.bookingDetailsText}>
                   Booking ID: {currentBooking.bookingId}
                 </Text>
-                <Text style={styles.bookingDetailsText}>
-                  From: {currentBooking.pickupLocation}
-                </Text>
-                <Text style={styles.bookingDetailsText}>
-                  To: {currentBooking.destination}
-                </Text>
-                <Text style={styles.bookingDetailsText}>
-                  Cost: {currentBooking.cost} RWF
-                </Text>
+                {/* Other details */}
               </View>
             )}
             <TouchableOpacity style={styles.modalButton} onPress={closeSuccessModal}>
-              <Text style={styles.modalButtonText}>View Booking</Text>
+              <Text style={styles.modalButtonText}>View My Bookings</Text>
             </TouchableOpacity>
           </View>
         </Modal>
