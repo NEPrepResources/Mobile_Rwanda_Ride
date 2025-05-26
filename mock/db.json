@@ -764,6 +764,62 @@
       "status": "Pending",
       "createdAt": "2025-05-25T20:34:18.605Z",
       "id": "iH81_BU"
+    },
+    {
+      "pickupLocation": "Kabuga bus station",
+      "destination": "Masaka bus station",
+      "rideType": "Shared",
+      "passengers": 2,
+      "dateTime": "2025-05-26T07:00:00.000Z",
+      "duration": 1,
+      "bookingId": "1ZGWIVDMNE",
+      "userId": "u3",
+      "cost": 1500,
+      "status": "Pending",
+      "createdAt": "2025-05-25T22:03:42.416Z",
+      "id": "FxBCCiO"
+    },
+    {
+      "pickupLocation": "Kanombe airport",
+      "destination": "Masaka ",
+      "rideType": "Economy",
+      "passengers": 1,
+      "dateTime": "2025-05-26T10:00:00.000Z",
+      "duration": 1,
+      "bookingId": "TH2BZI8GDN",
+      "userId": "u1",
+      "cost": 2500,
+      "status": "Pending",
+      "createdAt": "2025-05-25T22:12:31.848Z",
+      "id": "Ut3Tz4O"
+    },
+    {
+      "pickupLocation": "Kagugu",
+      "destination": "Gisozi",
+      "rideType": "Shared",
+      "passengers": 1,
+      "dateTime": "2025-05-26T16:30:00.000Z",
+      "duration": 1,
+      "bookingId": "H3K8ML61PB",
+      "userId": "u1",
+      "cost": 1500,
+      "status": "Pending",
+      "createdAt": "2025-05-25T22:16:22.812Z",
+      "id": "t77c2dC"
+    },
+    {
+      "pickupLocation": "Kabuga",
+      "destination": "Masaka",
+      "rideType": "Shared",
+      "passengers": 1,
+      "dateTime": "2025-05-26T16:30:00.000Z",
+      "duration": 1,
+      "bookingId": "LXEK29KIZZ",
+      "userId": "u1",
+      "cost": 1500,
+      "status": "Pending",
+      "createdAt": "2025-05-25T22:39:01.258Z",
+      "id": "YAkxnVu"
     }
   ],
   "vehicles": [

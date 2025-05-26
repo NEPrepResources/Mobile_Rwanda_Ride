@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
-  Platform 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { router } from 'expo-router';
@@ -13,7 +13,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import Modal from 'react-native-modal';
 import FormInput from '@/components/ui/FormInput';
 import PrimaryButton from '@/components/ui/PrimaryButton';
-import { createBooking, calculateCost } from '@/store/slices/bookingSlice';
+import { createBooking, calculateCost, resetBookingState } from '@/store/slices/bookingSlice';
 import { RootState, AppDispatch } from '@/store/store';
 import { COLORS } from '@/constants/colors';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -39,25 +39,21 @@ export default function BookRideScreen() {
   const [passengers, setPassengers] = useState('1');
   const [dateTime, setDateTime] = useState(new Date());
   const [duration, setDuration] = useState('1');
-  
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  
   const [formErrors, setFormErrors] = useState<FormErrors>({
     pickupLocation: '',
     destination: '',
     rideType: '',
     passengers: '',
     dateTime: '',
-    duration: ''
+    duration: '',
   });
-  
   const [estimatedCost, setEstimatedCost] = useState(0);
   const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
   const [isErrorModalVisible, setIsErrorModalVisible] = useState(false);
 
   useEffect(() => {
-    // Calculate estimated cost whenever relevant fields change
     if (rideType) {
       const cost = calculateCost(rideType);
       setEstimatedCost(cost);
@@ -65,12 +61,14 @@ export default function BookRideScreen() {
   }, [rideType]);
 
   useEffect(() => {
+    console.log('currentBooking changed:', currentBooking);
     if (currentBooking) {
       setIsSuccessModalVisible(true);
     }
   }, [currentBooking]);
 
   useEffect(() => {
+    console.log('error changed:', error);
     if (error) {
       setIsErrorModalVisible(true);
     }
@@ -95,51 +93,53 @@ export default function BookRideScreen() {
       rideType: '',
       passengers: '',
       dateTime: '',
-      duration: ''
+      duration: '',
     };
-    
     let isValid = true;
-    
-    // Validate pickup location
+
     if (!pickupLocation || pickupLocation.length < 3 || pickupLocation.length > 50) {
       errors.pickupLocation = 'Pickup location must be between 3 and 50 characters';
       isValid = false;
     }
-    
-    // Validate destination
+
     if (!destination || destination.length < 3 || destination.length > 50) {
       errors.destination = 'Destination must be between 3 and 50 characters';
       isValid = false;
     }
-    
-    // Validate passengers
+
     const passengersNum = parseInt(passengers, 10);
     if (isNaN(passengersNum) || passengersNum < 1 || passengersNum > 4) {
       errors.passengers = 'Number of passengers must be between 1 and 4';
       isValid = false;
     }
-    
-    // Validate date/time (must be at least 30 minutes in the future)
+
     const now = new Date();
     const thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60000);
     if (dateTime < thirtyMinutesFromNow) {
       errors.dateTime = 'Booking time must be at least 30 minutes from now';
       isValid = false;
     }
-    
-    // Validate duration
+
     const durationNum = parseFloat(duration);
     if (isNaN(durationNum) || durationNum < 0.5 || durationNum > 12) {
       errors.duration = 'Duration must be between 0.5 and 12 hours';
       isValid = false;
     }
-    
+
     setFormErrors(errors);
     return isValid;
   };
 
   const handleSubmit = () => {
     if (validateForm()) {
+      console.log('Submitting booking with data:', {
+        pickupLocation,
+        destination,
+        rideType,
+        passengers: parseInt(passengers, 10),
+        dateTime: dateTime.toISOString(),
+        duration: parseFloat(duration),
+      });
       dispatch(createBooking({
         pickupLocation,
         destination,
@@ -155,11 +155,13 @@ export default function BookRideScreen() {
     setIsSuccessModalVisible(false);
     if (currentBooking) {
       router.push(`./bookings/${currentBooking.bookingId}`);
+      dispatch(resetBookingState()); // Reset state after navigation
     }
   };
 
   const closeErrorModal = () => {
     setIsErrorModalVisible(false);
+    dispatch(resetBookingState()); // Reset error state
   };
 
   const showDateTimePicker = (mode: 'date' | 'time') => {
@@ -172,191 +174,200 @@ export default function BookRideScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-    <ScrollView 
-      style={[
-        styles.container,
-        { backgroundColor: theme === 'dark' ? COLORS.DARK_BG : COLORS.LIGHT_BG }
-      ]}
-      contentContainerStyle={styles.contentContainer}
-    >
-      <View style={styles.card}>
-        <Text style={styles.title}>Book a Ride</Text>
-        
-        <FormInput
-          label="Pickup Location"
-          value={pickupLocation}
-          onChangeText={setPickupLocation}
-          placeholder="Enter pickup location"
-          error={formErrors.pickupLocation}
-          leftIcon={<MaterialIcons name="location-on" size={20} color={COLORS.PRIMARY} />}
-        />
-        
-        <FormInput
-          label="Destination"
-          value={destination}
-          onChangeText={setDestination}
-          placeholder="Enter destination"
-          error={formErrors.destination}
-          leftIcon={<MaterialIcons name="flag" size={20} color={COLORS.PRIMARY} />}
-        />
-        
-        <Text style={styles.label}>Ride Type</Text>
-        <View style={styles.rideTypeContainer}>
-          {(['Economy', 'Premium', 'Shared'] as const).map(type => (
-            <TouchableOpacity
-              key={type}
-              style={[
-                styles.rideTypeButton,
-                rideType === type && styles.rideTypeButtonActive
-              ]}
-              onPress={() => setRideType(type)}
-            >
-              <Text 
+      <ScrollView
+        style={[
+          styles.container,
+          { backgroundColor: theme === 'dark' ? COLORS.DARK_BG : COLORS.LIGHT_BG },
+        ]}
+        contentContainerStyle={styles.contentContainer}
+      >
+        <View style={styles.card}>
+          <Text style={styles.title}>Book a Ride</Text>
+
+          <FormInput
+            label="Pickup Location"
+            value={pickupLocation}
+            onChangeText={setPickupLocation}
+            placeholder="Enter pickup location"
+            error={formErrors.pickupLocation}
+            leftIcon={<MaterialIcons name="location-on" size={20} color={COLORS.PRIMARY} />}
+          />
+
+          <FormInput
+            label="Destination"
+            value={destination}
+            onChangeText={setDestination}
+            placeholder="Enter destination"
+            error={formErrors.destination}
+            leftIcon={<MaterialIcons name="flag" size={20} color={COLORS.PRIMARY} />}
+          />
+
+          <Text style={styles.label}>Ride Type</Text>
+          <View style={styles.rideTypeContainer}>
+            {(['Economy', 'Premium', 'Shared'] as const).map((type) => (
+              <TouchableOpacity
+                key={type}
                 style={[
-                  styles.rideTypeText,
-                  rideType === type && styles.rideTypeTextActive
+                  styles.rideTypeButton,
+                  rideType === type && styles.rideTypeButtonActive,
                 ]}
+                onPress={() => setRideType(type)}
               >
-                {type}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        {formErrors.rideType ? <Text style={styles.errorText}>{formErrors.rideType}</Text> : null}
-        
-        <FormInput
-          label="Number of Passengers"
-          value={passengers}
-          onChangeText={setPassengers}
-          placeholder="Enter number of passengers (1-4)"
-          keyboardType="numeric"
-          error={formErrors.passengers}
-          leftIcon={<MaterialIcons name="person" size={20} color={COLORS.PRIMARY} />}
-        />
-        
-        <Text style={styles.label}>Date & Time</Text>
-        <TouchableOpacity 
-          style={styles.dateTimeInput}
-          onPress={() => showDateTimePicker('date')}
-        >
-          <MaterialIcons name="calendar-today" size={20} color={COLORS.PRIMARY} />
-          <Text style={styles.dateTimeText}>
-            {dateTime.toLocaleDateString()}
-          </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.dateTimeInput}
-          onPress={() => showDateTimePicker('time')}
-        >
-          <MaterialIcons name="access-time" size={20} color={COLORS.PRIMARY} />
-          <Text style={styles.dateTimeText}>
-            {dateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </Text>
-        </TouchableOpacity>
-        {formErrors.dateTime ? <Text style={styles.errorText}>{formErrors.dateTime}</Text> : null}
-        
-        {showDatePicker && (
-          <DateTimePicker
-            value={dateTime}
-            mode="date"
-            is24Hour={true}
-            display="default"
-            minimumDate={new Date()}
-            onChange={handleDateChange}
-          />
-        )}
-        
-        {showTimePicker && (
-          <DateTimePicker
-            value={dateTime}
-            mode="time"
-            is24Hour={true}
-            display="default"
-            onChange={handleTimeChange}
-          />
-        )}
-        
-        <FormInput
-          label="Duration (hours)"
-          value={duration}
-          onChangeText={setDuration}
-          placeholder="Enter duration (0.5-12)"
-          keyboardType="numeric"
-          error={formErrors.duration}
-          leftIcon={<MaterialIcons name="hourglass-bottom" size={20} color={COLORS.PRIMARY} />}
-        />
-        
-        <View style={styles.costContainer}>
-          <Text style={styles.costLabel}>Estimated Cost:</Text>
-          <Text style={styles.costValue}>{estimatedCost} RWF</Text>
-        </View>
-        
-        <PrimaryButton
-          title={isLoading ? "Booking..." : "Book Ride"}
-          onPress={handleSubmit}
-          disabled={isLoading}
-        />
-      </View>
-      
-      {/* Success Modal */}
-      <Modal isVisible={isSuccessModalVisible} onBackdropPress={closeSuccessModal}>
-        <View style={styles.modalContainer}>
-          <View style={styles.successIconContainer}>
-            <MaterialIcons name="check-circle" size={60} color={COLORS.SUCCESS} />
+                <Text
+                  style={[
+                    styles.rideTypeText,
+                    rideType === type && styles.rideTypeTextActive,
+                  ]}
+                >
+                  {type}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
-          <Text style={styles.modalTitle}>Booking Successful!</Text>
-          <Text style={styles.modalMessage}>
-            Your booking has been created successfully.
-          </Text>
-          {currentBooking && (
-            <View style={styles.bookingDetailsContainer}>
-              <Text style={styles.bookingDetailsTitle}>Booking Details:</Text>
-              <Text style={styles.bookingDetailsText}>
-                Booking ID: {currentBooking.bookingId}
-              </Text>
-              <Text style={styles.bookingDetailsText}>
-                From: {currentBooking.pickupLocation}
-              </Text>
-              <Text style={styles.bookingDetailsText}>
-                To: {currentBooking.destination}
-              </Text>
-              <Text style={styles.bookingDetailsText}>
-                Cost: {currentBooking.cost} RWF
-              </Text>
-            </View>
-          )}
-          <TouchableOpacity style={styles.modalButton} onPress={closeSuccessModal}>
-            <Text style={styles.modalButtonText}>View Booking</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
-      
-      {/* Error Modal */}
-      <Modal isVisible={isErrorModalVisible} onBackdropPress={closeErrorModal}>
-        <View style={styles.modalContainer}>
-          <View style={styles.errorIconContainer}>
-            <MaterialIcons name="error" size={60} color={COLORS.ERROR} />
-          </View>
-          <Text style={[styles.modalTitle, { color: COLORS.ERROR }]}>Booking Failed</Text>
-          <Text style={styles.modalMessage}>{error}</Text>
-          <TouchableOpacity 
-            style={[styles.modalButton, { backgroundColor: COLORS.ERROR }]} 
-            onPress={closeErrorModal}
+          {formErrors.rideType ? <Text style={styles.errorText}>{formErrors.rideType}</Text> : null}
+
+          <FormInput
+            label="Number of Passengers"
+            value={passengers}
+            onChangeText={setPassengers}
+            placeholder="Enter number of passengers (1-4)"
+            keyboardType="numeric"
+            error={formErrors.passengers}
+            leftIcon={<MaterialIcons name="person" size={20} color={COLORS.PRIMARY} />}
+          />
+
+          <Text style={styles.label}>Date & Time</Text>
+          <TouchableOpacity
+            style={styles.dateTimeInput}
+            onPress={() => showDateTimePicker('date')}
           >
-            <Text style={styles.modalButtonText}>Try Again</Text>
+            <MaterialIcons name="calendar-today" size={20} color={COLORS.PRIMARY} />
+            <Text style={styles.dateTimeText}>{dateTime.toLocaleDateString()}</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.dateTimeInput}
+            onPress={() => showDateTimePicker('time')}
+          >
+            <MaterialIcons name="access-time" size={20} color={COLORS.PRIMARY} />
+            <Text style={styles.dateTimeText}>
+              {dateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+          </TouchableOpacity>
+          {formErrors.dateTime ? <Text style={styles.errorText}>{formErrors.dateTime}</Text> : null}
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={dateTime}
+              mode="date"
+              is24Hour={true}
+              display="default"
+              minimumDate={new Date()}
+              onChange={handleDateChange}
+            />
+          )}
+
+          {showTimePicker && (
+            <DateTimePicker
+              value={dateTime}
+              mode="time"
+              is24Hour={true}
+              display="default"
+              onChange={handleTimeChange}
+            />
+          )}
+
+          <FormInput
+            label="Duration (hours)"
+            value={duration}
+            onChangeText={setDuration}
+            placeholder="Enter duration (0.5-12)"
+            keyboardType="numeric"
+            error={formErrors.duration}
+            leftIcon={<MaterialIcons name="hourglass-bottom" size={20} color={COLORS.PRIMARY} />}
+          />
+
+          <View style={styles.costContainer}>
+            <Text style={styles.costLabel}>Estimated Cost:</Text>
+            <Text style={styles.costValue}>{estimatedCost} RWF</Text>
+          </View>
+
+          <PrimaryButton
+            title={isLoading ? 'Booking...' : 'Book Ride'}
+            onPress={handleSubmit}
+            disabled={isLoading}
+          />
         </View>
-      </Modal>
-    </ScrollView>
+
+        <Modal
+          isVisible={isSuccessModalVisible}
+          onBackdropPress={closeSuccessModal}
+          animationIn="slideInUp"
+          animationOut="slideOutDown"
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.successIconContainer}>
+              <MaterialIcons name="check-circle" size={60} color={COLORS.SUCCESS} />
+            </View>
+            <Text style={styles.modalTitle}>Booking Successful!</Text>
+            <Text style={styles.modalMessage}>
+              Your booking has been created successfully.
+            </Text>
+            {currentBooking && (
+              <View style={styles.bookingDetailsContainer}>
+                <Text style={styles.bookingDetailsTitle}>Booking Details:</Text>
+                <Text style={styles.bookingDetailsText}>
+                  Booking ID: {currentBooking.bookingId}
+                </Text>
+                <Text style={styles.bookingDetailsText}>
+                  From: {currentBooking.pickupLocation}
+                </Text>
+                <Text style={styles.bookingDetailsText}>
+                  To: {currentBooking.destination}
+                </Text>
+                <Text style={styles.bookingDetailsText}>
+                  Cost: {currentBooking.cost} RWF
+                </Text>
+              </View>
+            )}
+            <TouchableOpacity style={styles.modalButton} onPress={closeSuccessModal}>
+              <Text style={styles.modalButtonText}>View Booking</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
+
+        <Modal
+          isVisible={isErrorModalVisible}
+          onBackdropPress={closeErrorModal}
+          animationIn="slideInUp"
+          animationOut="slideOutDown"
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.errorIconContainer}>
+              <MaterialIcons name="error" size={60} color={COLORS.ERROR} />
+            </View>
+            <Text style={[styles.modalTitle, { color: COLORS.ERROR }]}>Booking Failed</Text>
+            <Text style={styles.modalMessage}>
+              {error || 'An unexpected error occurred. Please try again.'}
+            </Text>
+            <TouchableOpacity
+              style={[styles.modalButton, { backgroundColor: COLORS.ERROR }]}
+              onPress={closeErrorModal}
+            >
+              <Text style={styles.modalButtonText}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
+// Styles remain unchanged
 const styles = StyleSheet.create({
-      safeArea: {
+  safeArea: {
     flex: 1,
-    backgroundColor: COLORS.LIGHT_BG, 
+    backgroundColor: COLORS.LIGHT_BG,
   },
   container: {
     flex: 1,

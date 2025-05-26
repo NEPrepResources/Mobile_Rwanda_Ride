@@ -131,7 +131,7 @@ export default function HomeScreen() {
         
         <TouchableOpacity 
           style={styles.quickActionButton}
-          onPress={() => router.push('./bookings')}
+          onPress={() => router.push('../bookings')}
         >
           <View style={[styles.iconCircle, { backgroundColor: COLORS.SUCCESS_LIGHT }]}>
             <MaterialIcons name="history" size={24} color="white" />
