@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/store/store';
 import { createBooking } from '@/store/slices/bookingSlice';
 import { updateVehicleAvailability } from '@/store/slices/vehicleSlice';
+import { fetchVehicles } from '@/store/slices/vehicleSlice';
 import { COLORS } from '@/constants/colors';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -55,9 +56,8 @@ export default function BookVehicleScreen() {
   const handleBack = () => {
     router.back();
   };
-
   const calculateEstimatedCost = () => {
-    const basePrice = RIDE_TYPE_PRICES[rideType] || RIDE_TYPE_PRICES.Economy;
+    const basePrice = RIDE_TYPE_PRICES[rideType as keyof typeof RIDE_TYPE_PRICES] || RIDE_TYPE_PRICES.Economy;
     const durationHours = parseInt(duration) || 0;
     const avgKmPerHour = 10; // Average speed assumption
     return basePrice * durationHours * avgKmPerHour;
@@ -97,37 +97,43 @@ export default function BookVehicleScreen() {
         destination,
         passengers: parseInt(passengers),
         duration: parseInt(duration),
-        rideType,
+        rideType: rideType as "Economy" | "Shared" | "Premium",
         dateTime: new Date().toISOString(),
-        status: 'Pending',
+        status: 'Pending' as const,
         cost: calculateEstimatedCost(),
       };
 
       console.log('Creating booking with data:', bookingData);
       
-      // First create the booking
-      const bookingResult = await dispatch(createBooking(bookingData)).unwrap();
-      
-      if (bookingResult) {
-        // Then update vehicle availability
-        await dispatch(updateVehicleAvailability({ 
-          vehicleId: vehicle.vehicleId, 
-          available: false 
+      try {
+        // Create booking
+        await dispatch(createBooking(bookingData)).unwrap();
+        
+        // Update vehicle availability
+        await dispatch(updateVehicleAvailability({
+          vehicleId: vehicle.vehicleId,
+          available: false
         })).unwrap();
 
+        // Refresh vehicles list
+        await dispatch(fetchVehicles());
+
+        // Show success alert and navigate
         Alert.alert(
           'Booking Successful',
-          'Your ride has been booked successfully!',
+          `Your ${vehicle.type} ride has been booked successfully!`,
           [
             {
               text: 'OK',
               onPress: () => {
-                router.replace('/(app)/(tabs)');
+                router.push('/(app)/(tabs)');
               },
             }
           ],
           { cancelable: false }
         );
+      } catch (error) {
+        throw error;
       }
     } catch (error: any) {
       console.error('Booking error:', error);
@@ -174,8 +180,7 @@ export default function BookVehicleScreen() {
           <Image source={{ uri: vehicle.image }} style={styles.vehicleImage} />
           <View style={styles.vehicleDetails}>
             <Text style={styles.vehicleType}>{vehicle.type}</Text>
-            <Text style={styles.vehicleModel}>{vehicle.model}</Text>
-            <Text style={styles.priceText}>{RIDE_TYPE_PRICES[rideType]} RWF/km</Text>
+            <Text style={styles.priceText}>{RIDE_TYPE_PRICES[rideType as keyof typeof RIDE_TYPE_PRICES]} RWF/km</Text>
           </View>
         </View>
 
@@ -205,7 +210,7 @@ export default function BookVehicleScreen() {
                   styles.rideTypePriceText,
                   rideType === type && styles.rideTypeTextActive
                 ]}>
-                  {RIDE_TYPE_PRICES[type]} RWF/km
+                  {RIDE_TYPE_PRICES[type as keyof typeof RIDE_TYPE_PRICES]} RWF/km
                 </Text>
               </TouchableOpacity>
             ))}
@@ -247,14 +252,13 @@ export default function BookVehicleScreen() {
               {calculateEstimatedCost().toLocaleString()} RWF
             </Text>
             <Text style={styles.estimatedCostNote}>
-              Based on average 10km per hour
             </Text>
           </View>
 
           <PrimaryButton
             title={isLoading ? 'Processing...' : 'Confirm Booking'}
             onPress={handleBooking}
-            disabled={isLoading}
+            // disabled={isLoading}
           />
         </View>
       </ScrollView>

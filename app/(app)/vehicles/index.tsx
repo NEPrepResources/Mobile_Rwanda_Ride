@@ -15,6 +15,7 @@ import { RootState, AppDispatch } from '@/store/store';
 import { COLORS } from '@/constants/colors';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function VehiclesScreen() {
   const dispatch = useDispatch<AppDispatch>();
@@ -22,12 +23,25 @@ export default function VehiclesScreen() {
   const { theme } = useSelector((state: RootState) => state.settings);
   
   const [selectedType, setSelectedType] = useState<string>('All');
-  const [showAvailableOnly, setShowAvailableOnly] = useState<boolean>(true);
+  const [showAvailableOnly, setShowAvailableOnly] = useState<boolean>(false);
 
-  useEffect(() => {
-    dispatch(fetchVehicles());
-  }, [dispatch]);
+  // Refresh vehicles list when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      const refreshData = async () => {
+        await dispatch(fetchVehicles());
+        // Apply filters after fetching
+        dispatch(filterVehicles({ 
+          type: selectedType === 'All' ? undefined : selectedType,
+          available: showAvailableOnly ? true : undefined
+        }));
+      };
+      
+      refreshData();
+    }, [dispatch])
+  );
 
+  // Apply filters when selection changes
   useEffect(() => {
     dispatch(filterVehicles({ 
       type: selectedType === 'All' ? undefined : selectedType,
@@ -200,14 +214,14 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 1,
+    shadowRadius: 2,
     elevation: 2,
   },
   typeFilterItemActive: {
     backgroundColor: COLORS.PRIMARY,
   },
   typeFilterText: {
-    color: COLORS.SECONDARY,
+    color: COLORS.SECONDARY_DARK,
     fontWeight: '500',
   },
   typeFilterTextActive: {
@@ -218,17 +232,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   availabilityText: {
-    marginLeft: 4,
+    marginLeft: 8,
+    fontSize: 14,
     fontWeight: '500',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   listContainer: {
     padding: 16,
-    paddingTop: 0,
   },
   vehicleCard: {
+    flexDirection: 'row',
     backgroundColor: 'white',
-    borderRadius: 10,
-    overflow: 'hidden',
+    borderRadius: 12,
+    padding: 12,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -237,17 +257,19 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   vehicleImage: {
-    width: '100%',
-    height: 160,
+    width: 100,
+    height: 100,
+    borderRadius: 8,
   },
   vehicleInfo: {
-    padding: 16,
+    flex: 1,
+    marginLeft: 12,
   },
   vehicleHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   vehicleType: {
     fontSize: 18,
@@ -255,46 +277,32 @@ const styles = StyleSheet.create({
     color: COLORS.SECONDARY_DARK,
   },
   availabilityBadge: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 4,
   },
   vehicleDetails: {
-    marginBottom: 16,
+    marginTop: 4,
   },
   detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 4,
+    marginBottom: 4,
   },
   detailText: {
     marginLeft: 8,
-    color: COLORS.SECONDARY,
     fontSize: 14,
+    color: COLORS.SECONDARY,
   },
-  bookButton: {
-    backgroundColor: COLORS.PRIMARY,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  bookButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  loadingContainer: {
+  emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
+    paddingTop: 60,
   },
   emptyText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '500',
     color: COLORS.SECONDARY_DARK,
     marginTop: 16,
   },
@@ -302,6 +310,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.SECONDARY,
     marginTop: 8,
-    textAlign: 'center',
   },
-});
+}); 
