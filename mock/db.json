@@ -876,6 +876,34 @@
       "status": "Pending",
       "createdAt": "2025-05-25T23:55:47.053Z",
       "id": "bS4ihTu"
+    },
+    {
+      "pickupLocation": "Nyabugogo",
+      "destination": "Kinyinya",
+      "rideType": "Shared",
+      "passengers": 2,
+      "dateTime": "2025-05-27T17:00:00.000Z",
+      "duration": 0.5,
+      "bookingId": "SF6IKTPFJM",
+      "userId": "u2",
+      "cost": 1500,
+      "status": "Pending",
+      "createdAt": "2025-05-26T17:01:05.582Z",
+      "id": "kYwDb0R"
+    },
+    {
+      "pickupLocation": "Nyabugogo",
+      "destination": "Kinyinya",
+      "rideType": "Shared",
+      "passengers": 2,
+      "dateTime": "2025-05-27T17:00:00.000Z",
+      "duration": 0.5,
+      "bookingId": "N2QV2XKUPC",
+      "userId": "u2",
+      "cost": 1500,
+      "status": "Pending",
+      "createdAt": "2025-05-26T17:01:10.887Z",
+      "id": "5oQxbu6"
     }
   ],
   "vehicles": [

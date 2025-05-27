@@ -1,213 +1,233 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
   FlatList, 
-  TouchableOpacity,
-  ActivityIndicator
+  TouchableOpacity, 
+  ActivityIndicator,
+  Alert,
+  BackHandler,
+  Platform
 } from 'react-native';
-import { router } from 'expo-router';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchDriverRequests, Booking } from '@/store/slices/bookingSlice';
+import { router } from 'expo-router';
 import { RootState, AppDispatch } from '@/store/store';
+import { fetchBookings, updateBookingStatus } from '@/store/slices/bookingSlice';
 import { COLORS } from '@/constants/colors';
 import { MaterialIcons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function RideRequestsScreen() {
+export default function RequestsScreen() {
   const dispatch = useDispatch<AppDispatch>();
-  const { user } = useSelector((state: RootState) => state.auth);
   const { bookings, isLoading } = useSelector((state: RootState) => state.bookings);
+  const { user } = useSelector((state: RootState) => state.auth);
   const { theme } = useSelector((state: RootState) => state.settings);
-  
-  // Filter for pending bookings without a driver assigned
-  const pendingRequests = bookings.filter(
-    booking => booking.status === 'Pending' && !booking.driverId
-  );
-  
+
   useEffect(() => {
-    dispatch(fetchDriverRequests());
+    dispatch(fetchBookings());
+
+    if (Platform.OS !== 'web') {
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+        router.back();
+        return true;
+      });
+
+      return () => backHandler.remove();
+    }
   }, [dispatch]);
-  
-  const renderRequestItem = ({ item }: { item: Booking }) => (
-    <TouchableOpacity
+
+  const handleBack = () => {
+    router.back();
+  };
+
+  const pendingBookings = bookings.filter(booking => 
+    booking.status === 'Pending' && booking.driverId === user?.id
+  );
+
+  const handleAcceptRequest = async (bookingId: string) => {
+    try {
+      await dispatch(updateBookingStatus({ bookingId, status: 'Confirmed' })).unwrap();
+      Alert.alert('Success', 'Ride request accepted successfully!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to accept ride request. Please try again.');
+    }
+  };
+
+  const handleRejectRequest = async (bookingId: string) => {
+    try {
+      await dispatch(updateBookingStatus({ bookingId, status: 'Rejected' })).unwrap();
+      Alert.alert('Success', 'Ride request rejected successfully!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to reject ride request. Please try again.');
+    }
+  };
+
+  const renderRequestItem = ({ item }) => (
+    <View 
       style={[
         styles.requestCard,
         { backgroundColor: theme === 'dark' ? COLORS.DARK_CARD : 'white' }
       ]}
-      onPress={() => router.push(`./requests/${item.bookingId}`)}
     >
-      <View style={styles.cardHeader}>
-        <View style={styles.bookingIdContainer}>
-          <Text style={styles.bookingIdLabel}>Booking ID:</Text>
-          <Text style={styles.bookingId}>{item.bookingId}</Text>
+      <View style={styles.requestHeader}>
+        <View style={styles.userInfo}>
+          <MaterialIcons name="person" size={24} color={COLORS.PRIMARY} />
+          <View style={styles.userDetails}>
+            <Text style={styles.userName}>{item.userName}</Text>
+            <Text style={styles.requestTime}>
+              {new Date(item.dateTime).toLocaleString()}
+            </Text>
+          </View>
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: COLORS.WARNING }]}>
-          <MaterialIcons name="pending" size={16} color="white" />
-          <Text style={styles.statusText}>Pending</Text>
+        <View style={styles.statusBadge}>
+          <Text style={styles.statusText}>{item.status}</Text>
         </View>
       </View>
-      
+
       <View style={styles.locationContainer}>
         <View style={styles.locationItem}>
           <MaterialIcons name="my-location" size={20} color={COLORS.PRIMARY} />
-          <Text style={styles.locationText} numberOfLines={1}>
-            {item.pickupLocation}
-          </Text>
+          <Text style={styles.locationText}>{item.pickupLocation}</Text>
         </View>
         <View style={styles.locationDivider} />
         <View style={styles.locationItem}>
           <MaterialIcons name="location-on" size={20} color={COLORS.ERROR} />
-          <Text style={styles.locationText} numberOfLines={1}>
-            {item.destination}
-          </Text>
+          <Text style={styles.locationText}>{item.destination}</Text>
         </View>
       </View>
-      
-      <View style={styles.requestDetails}>
-        <View style={styles.detailItem}>
-          <MaterialIcons name="directions-car" size={16} color={COLORS.SECONDARY} />
-          <Text style={styles.detailText}>{item.rideType}</Text>
-        </View>
-        
+
+      <View style={styles.detailsContainer}>
         <View style={styles.detailItem}>
           <MaterialIcons name="person" size={16} color={COLORS.SECONDARY} />
-          <Text style={styles.detailText}>{item.passengers} Passenger{item.passengers > 1 ? 's' : ''}</Text>
+          <Text style={styles.detailText}>
+            {item.passengers} Passenger{item.passengers > 1 ? 's' : ''}
+          </Text>
         </View>
-        
         <View style={styles.detailItem}>
           <MaterialIcons name="access-time" size={16} color={COLORS.SECONDARY} />
-          <Text style={styles.detailText}>{item.duration} hr{item.duration > 1 ? 's' : ''}</Text>
+          <Text style={styles.detailText}>{item.duration} hours</Text>
+        </View>
+        <View style={styles.detailItem}>
+          <MaterialIcons name="attach-money" size={16} color={COLORS.SECONDARY} />
+          <Text style={styles.detailText}>{item.cost} RWF</Text>
         </View>
       </View>
-      
-      <View style={styles.cardFooter}>
-        <Text style={styles.dateText}>
-          {new Date(item.dateTime).toLocaleString()}
-        </Text>
-        <Text style={styles.costText}>{item.cost} RWF</Text>
-      </View>
-      
-      <View style={styles.actionButtonsContainer}>
-        <TouchableOpacity
-          style={styles.viewDetailsButton}
-          onPress={() => router.push(`./requests/${item.bookingId}`)}
+
+      <View style={styles.actionButtons}>
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.acceptButton]}
+          onPress={() => handleAcceptRequest(item.bookingId)}
         >
-          <Text style={styles.viewDetailsText}>View Details</Text>
+          <MaterialIcons name="check" size={20} color="white" />
+          <Text style={styles.actionButtonText}>Accept</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.rejectButton]}
+          onPress={() => handleRejectRequest(item.bookingId)}
+        >
+          <MaterialIcons name="close" size={20} color="white" />
+          <Text style={styles.actionButtonText}>Reject</Text>
         </TouchableOpacity>
       </View>
-    </TouchableOpacity>
+    </View>
   );
-  
+
   const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
-      <MaterialIcons name="pending-actions" size={60} color={COLORS.SECONDARY_LIGHT} />
-      <Text style={styles.emptyText}>No ride requests</Text>
+      <MaterialIcons name="notifications-none" size={60} color={COLORS.SECONDARY_LIGHT} />
+      <Text style={styles.emptyText}>No pending requests</Text>
       <Text style={styles.emptySubtext}>
-        There are no pending ride requests at this time.
+        New ride requests will appear here
       </Text>
     </View>
   );
 
   return (
-    <View 
-      style={[
-        styles.container,
-        { backgroundColor: theme === 'dark' ? COLORS.DARK_BG : COLORS.LIGHT_BG }
-      ]}
-    >
-      <Text style={styles.title}>Ride Requests</Text>
-      
-      <Text style={styles.subtitle}>
-        Available ride requests pending driver approval
-      </Text>
-      
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.PRIMARY} />
-        </View>
-      ) : (
-        <FlatList
-          data={pendingRequests}
-          renderItem={renderRequestItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
-          ListEmptyComponent={renderEmptyList}
-        />
-      )}
-    </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme === 'dark' ? COLORS.DARK_BG : COLORS.LIGHT_BG }]}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Ride Requests</Text>
+        {isLoading && (
+          <ActivityIndicator size="small" color={COLORS.PRIMARY} />
+        )}
+      </View>
+
+      <FlatList
+        data={pendingBookings}
+        renderItem={renderRequestItem}
+        keyExtractor={(item) => item.bookingId}
+        contentContainerStyle={styles.listContainer}
+        ListEmptyComponent={renderEmptyList}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.LIGHT_BG,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: COLORS.PRIMARY,
-    marginHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: COLORS.SECONDARY,
-    marginHorizontal: 16,
-    marginBottom: 16,
   },
   listContainer: {
     padding: 16,
-    paddingTop: 0,
   },
   requestCard: {
     backgroundColor: 'white',
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  cardHeader: {
+  requestHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  bookingIdContainer: {
+  userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  bookingIdLabel: {
-    fontSize: 12,
-    color: COLORS.SECONDARY,
-    marginRight: 4,
+  userDetails: {
+    marginLeft: 12,
   },
-  bookingId: {
-    fontSize: 14,
-    fontWeight: 'bold',
+  userName: {
+    fontSize: 16,
+    fontWeight: '500',
     color: COLORS.SECONDARY_DARK,
   },
+  requestTime: {
+    fontSize: 12,
+    color: COLORS.SECONDARY,
+    marginTop: 2,
+  },
   statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    backgroundColor: COLORS.WARNING + '20',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 12,
   },
   statusText: {
-    color: 'white',
+    color: COLORS.WARNING,
     fontSize: 12,
     fontWeight: '500',
-    marginLeft: 4,
   },
   locationContainer: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
   locationItem: {
     flexDirection: 'row',
@@ -215,25 +235,24 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   locationText: {
-    marginLeft: 8,
+    marginLeft: 12,
     fontSize: 14,
     color: COLORS.SECONDARY_DARK,
     flex: 1,
   },
   locationDivider: {
-    height: 16,
+    height: 20,
     width: 1,
     backgroundColor: COLORS.GREY,
     marginLeft: 10,
   },
-  requestDetails: {
+  detailsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
-    paddingVertical: 8,
+    marginBottom: 16,
+    paddingTop: 8,
     borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: COLORS.GREY_LIGHT,
+    borderTopColor: COLORS.GREY_LIGHT,
   },
   detailItem: {
     flexDirection: 'row',
@@ -241,42 +260,32 @@ const styles = StyleSheet.create({
   },
   detailText: {
     marginLeft: 4,
-    fontSize: 12,
+    fontSize: 14,
     color: COLORS.SECONDARY,
   },
-  cardFooter: {
+  actionButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
   },
-  dateText: {
-    fontSize: 12,
-    color: COLORS.SECONDARY,
-  },
-  costText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.PRIMARY,
-  },
-  actionButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  viewDetailsButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    backgroundColor: COLORS.PRIMARY,
-  },
-  viewDetailsText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  loadingContainer: {
+  actionButton: {
     flex: 1,
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginHorizontal: 4,
+  },
+  acceptButton: {
+    backgroundColor: COLORS.SUCCESS,
+  },
+  rejectButton: {
+    backgroundColor: COLORS.ERROR,
+  },
+  actionButtonText: {
+    color: 'white',
+    fontWeight: '500',
+    marginLeft: 4,
   },
   emptyContainer: {
     alignItems: 'center',

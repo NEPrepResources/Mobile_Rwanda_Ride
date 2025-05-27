@@ -22,7 +22,7 @@ export default function CustomDrawerContent(props: any) {
   
   const handleLogout = () => {
     dispatch(logout()).then(() => {
-      router.replace('../../app/(auth)/login');
+      router.replace('/(auth)/login');
     });
   };
   

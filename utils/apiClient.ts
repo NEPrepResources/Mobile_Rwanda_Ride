@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://10.12.75.56:5000';
+const API_BASE_URL = 'http://10.11.72.161:5000';
 
 const handleResponse = async (response: Response) => {
   if (!response.ok) {

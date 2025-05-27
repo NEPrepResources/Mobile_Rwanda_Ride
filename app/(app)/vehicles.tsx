@@ -9,10 +9,12 @@ import {
   ActivityIndicator 
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { router } from 'expo-router';
 import { fetchVehicles, filterVehicles, Vehicle } from '@/store/slices/vehicleSlice';
 import { RootState, AppDispatch } from '@/store/store';
 import { COLORS } from '@/constants/colors';
 import { MaterialIcons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function VehiclesScreen() {
   const dispatch = useDispatch<AppDispatch>();
@@ -82,11 +84,12 @@ export default function VehiclesScreen() {
   );
 
   const renderVehicleItem = ({ item }: { item: Vehicle }) => (
-    <View 
+    <TouchableOpacity 
       style={[
         styles.vehicleCard,
         { backgroundColor: theme === 'dark' ? COLORS.DARK_CARD : 'white' }
       ]}
+      onPress={() => router.push(`/vehicles/${item.vehicleId}`)}
     >
       <Image source={{ uri: item.image }} style={styles.vehicleImage} />
       
@@ -122,14 +125,8 @@ export default function VehiclesScreen() {
             <Text style={styles.detailText}>Capacity: {item.capacity} Passenger{item.capacity > 1 ? 's' : ''}</Text>
           </View>
         </View>
-        
-        {item.available && (
-          <TouchableOpacity style={styles.bookButton} onPress={() => {}}>
-            <Text style={styles.bookButtonText}>Book This Vehicle</Text>
-          </TouchableOpacity>
-        )}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   const renderEmptyList = () => (
@@ -143,13 +140,14 @@ export default function VehiclesScreen() {
   );
 
   return (
-    <View 
-      style={[
-        styles.container,
-        { backgroundColor: theme === 'dark' ? COLORS.DARK_BG : COLORS.LIGHT_BG }
-      ]}
-    >
-      <Text style={styles.title}>Available Vehicles</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme === 'dark' ? COLORS.DARK_BG : COLORS.LIGHT_BG }]}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <MaterialIcons name="arrow-back" size={24} color={COLORS.PRIMARY} />
+        </TouchableOpacity>
+        <Text style={styles.title}>Available Vehicles</Text>
+        <View style={{ width: 24 }} />
+      </View>
       
       {renderTypeFilter()}
       
@@ -166,7 +164,7 @@ export default function VehiclesScreen() {
           ListEmptyComponent={renderEmptyList}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -175,11 +173,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.LIGHT_BG,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: COLORS.PRIMARY,
-    margin: 16,
+    marginLeft: 16,
   },
   filterContainer: {
     flexDirection: 'row',
