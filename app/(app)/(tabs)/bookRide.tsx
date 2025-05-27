@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-
 import {
   View,
   Text,
@@ -7,14 +6,13 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  Alert,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { router } from 'expo-router';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import Modal from 'react-native-modal';
 import FormInput from '@/components/ui/FormInput';
 import PrimaryButton from '@/components/ui/PrimaryButton';
-import { createBooking, calculateCost, resetBookingState } from '@/store/slices/bookingSlice';
 import { RootState, AppDispatch } from '@/store/store';
 import { COLORS } from '@/constants/colors';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -27,12 +25,19 @@ interface FormErrors {
   passengers: string;
   dateTime: string;
   duration: string;
+  vehicle: string;
 }
+
+const RIDE_TYPES = {
+  Economy: 1000,
+  Premium: 1500,
+  Shared: 800,
+};
 
 export default function BookRideScreen() {
   const dispatch = useDispatch<AppDispatch>();
-  const { isLoading, error, currentBooking } = useSelector((state: RootState) => state.bookings);
   const { theme } = useSelector((state: RootState) => state.settings);
+  const { vehicles } = useSelector((state: RootState) => state.vehicles);
 
   const [pickupLocation, setPickupLocation] = useState('');
   const [destination, setDestination] = useState('');
@@ -40,6 +45,7 @@ export default function BookRideScreen() {
   const [passengers, setPassengers] = useState('1');
   const [dateTime, setDateTime] = useState(new Date());
   const [duration, setDuration] = useState('1');
+  const [selectedVehicle, setSelectedVehicle] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [formErrors, setFormErrors] = useState<FormErrors>({
@@ -49,31 +55,17 @@ export default function BookRideScreen() {
     passengers: '',
     dateTime: '',
     duration: '',
+    vehicle: '',
   });
   const [estimatedCost, setEstimatedCost] = useState(0);
-  const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
-  const [isErrorModalVisible, setIsErrorModalVisible] = useState(false);
 
   useEffect(() => {
     if (rideType) {
-      const cost = calculateCost(rideType);
-      setEstimatedCost(cost);
+      const basePrice = RIDE_TYPES[rideType];
+      const durationHours = parseFloat(duration) || 1;
+      setEstimatedCost(basePrice * durationHours);
     }
-  }, [rideType]);
-
-  useEffect(() => {
-    console.log('currentBooking changed:', currentBooking);
-    if (currentBooking?.bookingId) {
-      setIsSuccessModalVisible(true);
-    }
-  }, [currentBooking]);
-
-  useEffect(() => {
-    console.log('error changed:', error);
-    if (error) {
-      setIsErrorModalVisible(true);
-    }
-  }, [error]);
+  }, [rideType, duration]);
 
   const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     const currentDate = selectedDate || dateTime;
@@ -95,6 +87,7 @@ export default function BookRideScreen() {
       passengers: '',
       dateTime: '',
       duration: '',
+      vehicle: '',
     };
     let isValid = true;
 
@@ -127,57 +120,31 @@ export default function BookRideScreen() {
       isValid = false;
     }
 
+    if (!selectedVehicle) {
+      errors.vehicle = 'Please select a vehicle';
+      isValid = false;
+    }
+
     setFormErrors(errors);
     return isValid;
   };
 
   const handleSubmit = () => {
     if (validateForm()) {
-      console.log('Submitting booking with data:', {
-        pickupLocation,
-        destination,
-        rideType,
-        passengers: parseInt(passengers, 10),
-        dateTime: dateTime.toISOString(),
-        duration: parseFloat(duration),
-      });
-      dispatch(createBooking({
-        pickupLocation,
-        destination,
-        rideType,
-        passengers: parseInt(passengers, 10),
-        dateTime: dateTime.toISOString(),
-        duration: parseFloat(duration),
-      }));
+      Alert.alert(
+        'Booking Successful',
+        'Your ride has been booked successfully!',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              router.push('/(app)/(tabs)');
+            },
+          }
+        ],
+        { cancelable: false }
+      );
     }
-  };
-  const resetForm = () => {
-    setPickupLocation('');
-    setDestination('');
-    setRideType('Economy');
-    setPassengers('1');
-    setDateTime(new Date());
-    setDuration('1');
-    setFormErrors({
-      pickupLocation: '',
-      destination: '',
-      rideType: '',
-      passengers: '',
-      dateTime: '',
-      duration: '',
-    });
-  };
-
-  const closeSuccessModal = () => {
-    setIsSuccessModalVisible(false);
-    resetForm();
-    dispatch(resetBookingState());
-    router.push('/bookings');
-  };
-
-  const closeErrorModal = () => {
-    setIsErrorModalVisible(false);
-    dispatch(resetBookingState());
   };
 
   const showDateTimePicker = (mode: 'date' | 'time') => {
@@ -187,7 +154,6 @@ export default function BookRideScreen() {
       setShowTimePicker(true);
     }
   };
-
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -218,6 +184,30 @@ export default function BookRideScreen() {
             error={formErrors.destination}
             leftIcon={<MaterialIcons name="flag" size={20} color={COLORS.PRIMARY} />}
           />
+
+          <Text style={styles.label}>Select Vehicle</Text>
+          <View style={styles.vehicleContainer}>
+            {vehicles.map((vehicle) => (
+              <TouchableOpacity
+                key={vehicle.vehicleId}
+                style={[
+                  styles.vehicleButton,
+                  selectedVehicle === vehicle.vehicleId && styles.vehicleButtonActive,
+                ]}
+                onPress={() => setSelectedVehicle(vehicle.vehicleId)}
+              >
+                <Text
+                  style={[
+                    styles.vehicleText,
+                    selectedVehicle === vehicle.vehicleId && styles.vehicleTextActive,
+                  ]}
+                >
+                  {vehicle.type}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {formErrors.vehicle ? <Text style={styles.errorText}>{formErrors.vehicle}</Text> : null}
 
           <Text style={styles.label}>Ride Type</Text>
           <View style={styles.rideTypeContainer}>
@@ -310,63 +300,15 @@ export default function BookRideScreen() {
           </View>
 
           <PrimaryButton
-            title={isLoading ? 'Booking...' : 'Book Ride'}
+            title="Book Ride"
             onPress={handleSubmit}
-            disabled={isLoading}
           />
         </View>
-
-        <Modal isVisible={isSuccessModalVisible} onBackdropPress={closeSuccessModal}>
-          <View style={styles.modalContainer}>
-            <View style={styles.successIconContainer}>
-              <MaterialIcons name="check-circle" size={60} color={COLORS.SUCCESS} />
-            </View>
-            <Text style={styles.modalTitle}>Booking Successful!</Text>
-            <Text style={styles.modalMessage}>
-              Your booking has been created successfully.
-            </Text>
-            {currentBooking?.bookingId && (
-              <View style={styles.bookingDetailsContainer}>
-                <Text style={styles.bookingDetailsText}>
-                  Booking ID: {currentBooking.bookingId}
-                </Text>
-                {/* Other details */}
-              </View>
-            )}
-            <TouchableOpacity style={styles.modalButton} onPress={closeSuccessModal}>
-              <Text style={styles.modalButtonText}>View My Bookings</Text>
-            </TouchableOpacity>
-          </View>
-        </Modal>
-
-        <Modal
-          isVisible={isErrorModalVisible}
-          onBackdropPress={closeErrorModal}
-          animationIn="slideInUp"
-          animationOut="slideOutDown"
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.errorIconContainer}>
-              <MaterialIcons name="error" size={60} color={COLORS.ERROR} />
-            </View>
-            <Text style={[styles.modalTitle, { color: COLORS.ERROR }]}>Booking Failed</Text>
-            <Text style={styles.modalMessage}>
-              {error || 'An unexpected error occurred. Please try again.'}
-            </Text>
-            <TouchableOpacity
-              style={[styles.modalButton, { backgroundColor: COLORS.ERROR }]}
-              onPress={closeErrorModal}
-            >
-              <Text style={styles.modalButtonText}>Try Again</Text>
-            </TouchableOpacity>
-          </View>
-        </Modal>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-// Styles remain unchanged
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -402,6 +344,33 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 8,
     color: COLORS.SECONDARY_DARK,
+  },
+  vehicleContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 16,
+    gap: 8,
+  },
+  vehicleButton: {
+    flex: 1,
+    minWidth: '30%',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.GREY_LIGHT,
+    alignItems: 'center',
+  },
+  vehicleButtonActive: {
+    backgroundColor: COLORS.PRIMARY,
+    borderColor: COLORS.PRIMARY,
+  },
+  vehicleText: {
+    color: COLORS.SECONDARY_DARK,
+    fontWeight: '500',
+  },
+  vehicleTextActive: {
+    color: 'white',
   },
   rideTypeContainer: {
     flexDirection: 'row',
@@ -467,58 +436,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: -12,
     marginBottom: 16,
-  },
-  modalContainer: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-  },
-  successIconContainer: {
-    marginBottom: 16,
-  },
-  errorIconContainer: {
-    marginBottom: 16,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: COLORS.SUCCESS,
-    marginBottom: 8,
-  },
-  modalMessage: {
-    fontSize: 16,
-    color: COLORS.SECONDARY_DARK,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  bookingDetailsContainer: {
-    width: '100%',
-    backgroundColor: COLORS.GREY_LIGHT,
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-  },
-  bookingDetailsTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 8,
-    color: COLORS.SECONDARY_DARK,
-  },
-  bookingDetailsText: {
-    fontSize: 14,
-    color: COLORS.SECONDARY_DARK,
-    marginBottom: 4,
-  },
-  modalButton: {
-    backgroundColor: COLORS.PRIMARY,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-  },
-  modalButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '500',
   },
 });

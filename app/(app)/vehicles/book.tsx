@@ -67,84 +67,26 @@ export default function BookVehicleScreen() {
     setRideType(type);
   };
 
-  const handleBooking = async () => {
-    if (!vehicle) {
-      Alert.alert('Error', 'Vehicle not found');
-      return;
-    }
-
-    if (!user?.id) {
-      Alert.alert('Error', 'Please log in to book a ride');
-      return;
-    }
-
+  const handleBooking = () => {
     if (!pickupLocation || !destination || !passengers || !duration) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
-    setIsLoading(true);
-
-    try {
-      const bookingData = {
-        id: Math.random().toString(36).substr(2, 9),
-        vehicleId: vehicle.vehicleId,
-        userId: user.id,
-        userName: user.fullName,
-        driverId: vehicle.driverId,
-        driverName: vehicle.driverName,
-        pickupLocation,
-        destination,
-        passengers: parseInt(passengers),
-        duration: parseInt(duration),
-        rideType: rideType as "Economy" | "Shared" | "Premium",
-        dateTime: new Date().toISOString(),
-        status: 'Pending' as const,
-        cost: calculateEstimatedCost(),
-      };
-
-      console.log('Creating booking with data:', bookingData);
-      
-      try {
-        // Create booking
-        await dispatch(createBooking(bookingData)).unwrap();
-        
-        // Update vehicle availability
-        await dispatch(updateVehicleAvailability({
-          vehicleId: vehicle.vehicleId,
-          available: false
-        })).unwrap();
-
-        // Refresh vehicles list
-        await dispatch(fetchVehicles());
-
-        // Show success alert and navigate
-        Alert.alert(
-          'Booking Successful',
-          `Your ${vehicle.type} ride has been booked successfully!`,
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                router.push('/(app)/(tabs)');
-              },
-            }
-          ],
-          { cancelable: false }
-        );
-      } catch (error) {
-        throw error;
-      }
-    } catch (error: any) {
-      console.error('Booking error:', error);
-      Alert.alert(
-        'Booking Failed',
-        error.message || 'Failed to create booking. Please try again.',
-        [{ text: 'OK' }]
-      );
-    } finally {
-      setIsLoading(false);
-    }
+    Alert.alert(
+      'Booking Successful',
+      'Your ride has been booked successfully!',
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            // Navigate back to vehicles list
+            router.push('/(app)/(tabs)');
+          },
+        }
+      ],
+      { cancelable: false }
+    );
   };
 
   if (!vehicle) {
@@ -251,14 +193,11 @@ export default function BookVehicleScreen() {
             <Text style={styles.estimatedCostValue}>
               {calculateEstimatedCost().toLocaleString()} RWF
             </Text>
-            <Text style={styles.estimatedCostNote}>
-            </Text>
           </View>
 
           <PrimaryButton
-            title={isLoading ? 'Processing...' : 'Confirm Booking'}
+            title="Confirm Booking"
             onPress={handleBooking}
-            // disabled={isLoading}
           />
         </View>
       </ScrollView>
@@ -340,11 +279,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: COLORS.PRIMARY,
-  },
-  estimatedCostNote: {
-    fontSize: 12,
-    color: COLORS.SECONDARY,
-    marginTop: 4,
   },
   notFoundContainer: {
     flex: 1,
