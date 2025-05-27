@@ -106,10 +106,14 @@ export default function VehicleDetailsScreen() {
               <MaterialIcons name="person" size={24} color={COLORS.PRIMARY} />
               <View style={styles.driverDetails}>
                 <Text style={styles.driverName}>{vehicle.driverName}</Text>
-                <View style={styles.ratingContainer}>
-                  <MaterialIcons name="star" size={16} color={COLORS.WARNING} />
-                  <Text style={styles.ratingText}>{vehicle.rating.toFixed(1)}</Text>
-                </View>
+                {vehicle.rating !== undefined && (
+                  <View style={styles.ratingContainer}>
+                    <MaterialIcons name="star" size={16} color={COLORS.WARNING} />
+                    <Text style={styles.ratingText}>
+                      {typeof vehicle.rating === 'number' ? vehicle.rating.toFixed(1) : 'N/A'}
+                    </Text>
+                  </View>
+                )}
               </View>
             </View>
 

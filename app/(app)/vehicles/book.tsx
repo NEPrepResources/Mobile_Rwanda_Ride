@@ -11,6 +11,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import FormInput from '@/components/ui/FormInput';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 
+const RIDE_TYPE_PRICES = {
+  Economy: 1000, // Base price per km
+  Shared: 800,   // 20% less than Economy
+  Premium: 1500  // 50% more than Economy
+};
+
 export default function BookVehicleScreen() {
   const { vehicleId } = useLocalSearchParams();
   const dispatch = useDispatch<AppDispatch>();
@@ -24,6 +30,7 @@ export default function BookVehicleScreen() {
   const [destination, setDestination] = useState('');
   const [passengers, setPassengers] = useState('1');
   const [duration, setDuration] = useState('1');
+  const [rideType, setRideType] = useState('Economy');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -39,6 +46,69 @@ export default function BookVehicleScreen() {
 
   const handleBack = () => {
     router.back();
+  };
+
+  const calculateEstimatedCost = () => {
+    const basePrice = RIDE_TYPE_PRICES[rideType] || RIDE_TYPE_PRICES.Economy;
+    const durationHours = parseInt(duration) || 0;
+    const avgKmPerHour = 10; // Average speed assumption
+    return basePrice * durationHours * avgKmPerHour;
+  };
+
+  const handleRideTypeSelect = (type: string) => {
+    setRideType(type);
+  };
+
+  const handleBooking = async () => {
+    if (!pickupLocation || !destination || !passengers || !duration) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const bookingData = {
+        vehicleId: vehicle.vehicleId,
+        userId: user?.id,
+        pickupLocation,
+        destination,
+        passengers: parseInt(passengers),
+        duration: parseInt(duration),
+        rideType,
+        dateTime: new Date().toISOString(),
+        status: 'Pending',
+        cost: calculateEstimatedCost(),
+      };
+
+      await dispatch(createBooking(bookingData)).unwrap();
+      await dispatch(updateVehicleAvailability({ vehicleId: vehicle.vehicleId, available: false })).unwrap();
+
+      Alert.alert(
+        'Success',
+        'Your booking has been submitted successfully!',
+        [
+          {
+            text: 'View Bookings',
+            onPress: () => {
+              router.push('/(app)/bookings');
+            },
+            style: 'default',
+          },
+          {
+            text: 'Back to Home',
+            onPress: () => {
+              router.push('/(app)/(tabs)');
+            },
+          },
+        ],
+        { cancelable: false }
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to create booking. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!vehicle) {
@@ -59,52 +129,6 @@ export default function BookVehicleScreen() {
     );
   }
 
-  const handleBooking = async () => {
-    if (!pickupLocation || !destination || !passengers || !duration) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const bookingData = {
-        vehicleId: vehicle.vehicleId,
-        userId: user?.id,
-        pickupLocation,
-        destination,
-        passengers: parseInt(passengers),
-        duration: parseInt(duration),
-        rideType: vehicle.type,
-        dateTime: new Date().toISOString(),
-        status: 'Pending',
-        cost: vehicle.pricePerKm * parseInt(duration) * 10, // Assuming 10km per hour
-      };
-
-      await dispatch(createBooking(bookingData)).unwrap();
-      await dispatch(updateVehicleAvailability({ vehicleId: vehicle.vehicleId, available: false })).unwrap();
-
-      Alert.alert(
-        'Success',
-        'Your booking has been submitted successfully!',
-        [
-          {
-            text: 'View Bookings',
-            onPress: () => router.push('/(app)/bookings'),
-          },
-          {
-            text: 'OK',
-            onPress: () => router.back(),
-          },
-        ]
-      );
-    } catch (error) {
-      Alert.alert('Error', 'Failed to create booking. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme === 'dark' ? COLORS.DARK_BG : COLORS.LIGHT_BG }]}>
       <View style={styles.header}>
@@ -121,11 +145,42 @@ export default function BookVehicleScreen() {
           <View style={styles.vehicleDetails}>
             <Text style={styles.vehicleType}>{vehicle.type}</Text>
             <Text style={styles.vehicleModel}>{vehicle.model}</Text>
-            <Text style={styles.priceText}>{vehicle.pricePerKm} RWF/km</Text>
+            <Text style={styles.priceText}>{RIDE_TYPE_PRICES[rideType]} RWF/km</Text>
           </View>
         </View>
 
         <View style={styles.formContainer}>
+          <View style={styles.rideTypeContainer}>
+            {Object.keys(RIDE_TYPE_PRICES).map((type) => (
+              <TouchableOpacity
+                key={type}
+                style={[
+                  styles.rideTypeButton,
+                  rideType === type && styles.rideTypeButtonActive
+                ]}
+                onPress={() => handleRideTypeSelect(type)}
+              >
+                <MaterialIcons
+                  name={type === 'Premium' ? 'star' : type === 'Shared' ? 'people' : 'directions-car'}
+                  size={24}
+                  color={rideType === type ? 'white' : COLORS.PRIMARY}
+                />
+                <Text style={[
+                  styles.rideTypeText,
+                  rideType === type && styles.rideTypeTextActive
+                ]}>
+                  {type}
+                </Text>
+                <Text style={[
+                  styles.rideTypePriceText,
+                  rideType === type && styles.rideTypeTextActive
+                ]}>
+                  {RIDE_TYPE_PRICES[type]} RWF/km
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
           <FormInput
             label="Pickup Location"
             value={pickupLocation}
@@ -159,7 +214,7 @@ export default function BookVehicleScreen() {
           <View style={styles.estimatedCost}>
             <Text style={styles.estimatedCostLabel}>Estimated Cost</Text>
             <Text style={styles.estimatedCostValue}>
-              {vehicle.pricePerKm * parseInt(duration || '0') * 10} RWF
+              {calculateEstimatedCost().toLocaleString()} RWF
             </Text>
             <Text style={styles.estimatedCostNote}>
               Based on average 10km per hour
@@ -266,5 +321,37 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: COLORS.SECONDARY,
     marginTop: 16,
+  },
+  rideTypeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  rideTypeButton: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: 'white',
+    marginHorizontal: 4,
+    borderWidth: 1,
+    borderColor: COLORS.PRIMARY,
+  },
+  rideTypeButtonActive: {
+    backgroundColor: COLORS.PRIMARY,
+  },
+  rideTypeText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.PRIMARY,
+    marginTop: 4,
+  },
+  rideTypeTextActive: {
+    color: 'white',
+  },
+  rideTypePriceText: {
+    fontSize: 12,
+    color: COLORS.SECONDARY,
+    marginTop: 2,
   },
 }); 
