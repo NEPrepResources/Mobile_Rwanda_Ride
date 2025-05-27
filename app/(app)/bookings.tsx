@@ -5,17 +5,17 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { router } from 'expo-router';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchBookings, Booking } from '@/store/slices/bookingSlice';
 import { RootState, AppDispatch } from '@/store/store';
 import { COLORS } from '@/constants/colors';
 import { MaterialIcons } from '@expo/vector-icons';
 
-type BookingStatus = 'All' | 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled' | 'Rejected';
 type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
+type BookingStatus = 'All' | 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled' | 'Rejected';
 
 export default function BookingsScreen() {
   const dispatch = useDispatch<AppDispatch>();
@@ -24,11 +24,11 @@ export default function BookingsScreen() {
   const { theme } = useSelector((state: RootState) => state.settings);
 
   const [selectedStatus, setSelectedStatus] = useState<BookingStatus>('All');
-  const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
+  const [filteredBookings, setFilteredBookings] = useState(bookings);
 
   useEffect(() => {
     if (user) {
-      dispatch(fetchBookings({ userId: user.id }));
+      dispatch({ type: 'bookings/fetchBookings', payload: { userId: user.id } });
     }
   }, [dispatch, user]);
 
@@ -39,6 +39,39 @@ export default function BookingsScreen() {
       setFilteredBookings(bookings.filter(booking => booking.status === selectedStatus));
     }
   }, [selectedStatus, bookings]);
+
+  const handleCancelBooking = (booking: any) => {
+    Alert.alert(
+      'Cancel Booking',
+      'Are you sure you want to cancel this booking?',
+      [
+        {
+          text: 'No',
+          style: 'cancel',
+        },
+        {
+          text: 'Yes',
+          style: 'destructive',
+          onPress: () => {
+            const updatedBookings = bookings.map(b => 
+              b.bookingId === booking.bookingId 
+                ? { ...b, status: 'Cancelled' } 
+                : b
+            );
+            dispatch({ type: 'bookings/updateBookings', payload: updatedBookings });
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const handleBookingPress = (bookingId: string) => {
+    router.push({
+      pathname: '/bookings/[id]',
+      params: { id: bookingId }
+    });
+  };
 
   const getStatusIcon = (status: string): MaterialIconName => {
     switch (status) {
@@ -62,13 +95,7 @@ export default function BookingsScreen() {
     }
   };
 
-  const handleBookingPress = (bookingId: string) => {
-    router.push({
-      pathname: './bookings/[id]',
-      params: { id: bookingId }
-    });
-  };
-  const renderBookingItem = ({ item }: { item: Booking }) => (
+  const renderBookingItem = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={[
         styles.bookingCard,
@@ -81,9 +108,22 @@ export default function BookingsScreen() {
           <Text style={styles.bookingIdLabel}>Booking ID:</Text>
           <Text style={styles.bookingId}>{item.bookingId}</Text>
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <MaterialIcons name={getStatusIcon(item.status)} size={16} color="white" />
-          <Text style={styles.statusText}>{item.status}</Text>
+        <View style={styles.headerRight}>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+            <MaterialIcons name={getStatusIcon(item.status)} size={16} color="white" />
+            <Text style={styles.statusText}>{item.status}</Text>
+          </View>
+          {(item.status === 'Pending' || item.status === 'Confirmed') && (
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                handleCancelBooking(item);
+              }}
+            >
+              <MaterialIcons name="close" size={20} color={COLORS.ERROR} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -202,7 +242,7 @@ export default function BookingsScreen() {
         <FlatList
           data={filteredBookings}
           renderItem={renderBookingItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.bookingId}
           contentContainerStyle={styles.listContainer}
           ListEmptyComponent={renderEmptyList}
         />
@@ -214,13 +254,125 @@ export default function BookingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.LIGHT_BG,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+    padding: 16,
     color: COLORS.PRIMARY,
-    margin: 16,
+  },
+  listContainer: {
+    padding: 16,
+  },
+  bookingCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  bookingIdContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  bookingIdLabel: {
+    fontSize: 14,
+    color: COLORS.SECONDARY,
+    marginRight: 4,
+  },
+  bookingId: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: COLORS.PRIMARY,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  statusText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  cancelButton: {
+    padding: 4,
+    borderRadius: 4,
+    backgroundColor: COLORS.ERROR + '20',
+  },
+  locationContainer: {
+    marginBottom: 16,
+  },
+  locationItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  locationText: {
+    flex: 1,
+    fontSize: 14,
+    color: COLORS.SECONDARY_DARK,
+  },
+  locationDivider: {
+    height: 16,
+    width: 1,
+    backgroundColor: COLORS.GREY_LIGHT,
+    marginLeft: 10,
+    marginVertical: 4,
+  },
+  bookingDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  detailText: {
+    fontSize: 14,
+    color: COLORS.SECONDARY_DARK,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.GREY_LIGHT,
+  },
+  dateText: {
+    fontSize: 12,
+    color: COLORS.SECONDARY,
+  },
+  costText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.PRIMARY,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   filterContainer: {
     paddingHorizontal: 16,
@@ -250,111 +402,6 @@ const styles = StyleSheet.create({
   },
   filterTextActive: {
     color: 'white',
-  },
-  listContainer: {
-    padding: 16,
-    paddingTop: 0,
-  },
-  bookingCard: {
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  bookingIdContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  bookingIdLabel: {
-    fontSize: 12,
-    color: COLORS.SECONDARY,
-    marginRight: 4,
-  },
-  bookingId: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: COLORS.SECONDARY_DARK,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '500',
-    marginLeft: 4,
-  },
-  locationContainer: {
-    marginBottom: 12,
-  },
-  locationItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 4,
-  },
-  locationText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: COLORS.SECONDARY_DARK,
-    flex: 1,
-  },
-  locationDivider: {
-    height: 16,
-    width: 1,
-    backgroundColor: COLORS.GREY,
-    marginLeft: 10,
-  },
-  bookingDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: COLORS.GREY_LIGHT,
-  },
-  detailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  detailText: {
-    marginLeft: 4,
-    fontSize: 12,
-    color: COLORS.SECONDARY,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  dateText: {
-    fontSize: 12,
-    color: COLORS.SECONDARY,
-  },
-  costText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.PRIMARY,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   emptyContainer: {
     alignItems: 'center',
