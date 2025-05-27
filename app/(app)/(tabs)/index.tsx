@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIn
 import { useDispatch, useSelector } from 'react-redux';
 import { router } from 'expo-router';
 import { fetchBookings } from '@/store/slices/bookingSlice';
-import { fetchVehicles } from '@/store/slices/vehicleSlice';
+import { fetchVehicles, Vehicle } from '@/store/slices/vehicleSlice';
 import { RootState, AppDispatch } from '@/store/store';
 import { COLORS } from '@/constants/colors';
 import DashboardCard from '@/components/ui/DashboardCard';
@@ -91,6 +91,51 @@ export default function HomeScreen() {
       default: return COLORS.SECONDARY;
     }
   };
+
+  const renderVehicleItem = ({ item }: { item: Vehicle }) => (
+    <TouchableOpacity
+      key={item.vehicleId}
+      style={styles.vehicleCard}
+      onPress={() => router.push(`/vehicles/${item.vehicleId}`)}
+    >
+      <Image source={{ uri: item.image }} style={styles.vehicleImage} />
+      <View style={styles.vehicleInfo}>
+        <View style={styles.vehicleHeader}>
+          <Text style={styles.vehicleType}>{item.type}</Text>
+          <View style={[
+            styles.availabilityBadge,
+            { backgroundColor: item.available ? COLORS.SUCCESS + '20' : COLORS.ERROR + '20' }
+          ]}>
+            <Text style={[
+              styles.availabilityText,
+              { color: item.available ? COLORS.SUCCESS : COLORS.ERROR }
+            ]}>
+              {item.available ? 'Available' : 'Unavailable'}
+            </Text>
+          </View>
+        </View>
+        
+        <View style={styles.vehicleDetails}>
+          <View style={styles.detailItem}>
+            <MaterialIcons name="directions-car" size={16} color={COLORS.SECONDARY} />
+            <Text style={styles.detailText}>{item.type}</Text>
+          </View>
+          
+          <View style={styles.detailItem}>
+            <MaterialIcons name="person" size={16} color={COLORS.SECONDARY} />
+            <Text style={styles.detailText}>{item.driverName}</Text>
+          </View>
+          
+          <View style={styles.detailItem}>
+            <MaterialIcons name="event-seat" size={16} color={COLORS.SECONDARY} />
+            <Text style={styles.detailText}>
+              {item.capacity} Passenger{item.capacity > 1 ? 's' : ''}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -189,24 +234,7 @@ export default function HomeScreen() {
         emptyStateIcon="car-rental"
       >
         {availableVehicles.length > 0 ? (
-          availableVehicles.map((vehicle) => (
-            <TouchableOpacity
-              key={vehicle.id}
-              style={styles.vehicleItem}
-              onPress={() => router.push(`./vehicles/${vehicle.id}`)}
-            >
-              <Image 
-                source={{ uri: vehicle.image }} 
-                style={styles.vehicleImage} 
-              />
-              <View style={styles.vehicleDetails}>
-                <Text style={styles.vehicleType}>{vehicle.type}</Text>
-                <Text style={styles.vehicleInfo}>
-                  {vehicle.driverName} • Capacity: {vehicle.capacity}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))
+          availableVehicles.map((vehicle) => renderVehicleItem({ item: vehicle }))
         ) : null}
       </DashboardCard>
     </ScrollView>
@@ -327,7 +355,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
-  vehicleItem: {
+  vehicleCard: {
     flexDirection: 'row',
     paddingVertical: 12,
     borderBottomWidth: 1,
@@ -339,15 +367,38 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginRight: 12,
   },
-  vehicleDetails: {
+  vehicleInfo: {
     justifyContent: 'center',
+  },
+  vehicleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   vehicleType: {
     fontWeight: '500',
     fontSize: 16,
     color: COLORS.SECONDARY_DARK,
   },
-  vehicleInfo: {
+  availabilityBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  availabilityText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  vehicleDetails: {
+    marginTop: 8,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  detailText: {
     fontSize: 12,
     color: COLORS.SECONDARY,
   },

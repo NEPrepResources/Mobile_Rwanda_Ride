@@ -59,6 +59,18 @@ export const fetchVehicleById = createAsyncThunk(
   }
 );
 
+export const updateVehicleAvailability = createAsyncThunk(
+  'vehicles/updateVehicleAvailability',
+  async ({ vehicleId, available }: { vehicleId: string; available: boolean }, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.patch(`/vehicles/${vehicleId}`, { available });
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Failed to update vehicle availability');
+    }
+  }
+);
+
 const vehicleSlice = createSlice({
   name: 'vehicles',
   initialState,
@@ -113,6 +125,25 @@ const vehicleSlice = createSlice({
         state.currentVehicle = action.payload;
       })
       .addCase(fetchVehicleById.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      
+      // Update vehicle availability
+      .addCase(updateVehicleAvailability.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateVehicleAvailability.fulfilled, (state, action: PayloadAction<Vehicle>) => {
+        state.isLoading = false;
+        state.vehicles = state.vehicles.map(vehicle =>
+          vehicle.vehicleId === action.payload.vehicleId ? action.payload : vehicle
+        );
+        state.filteredVehicles = state.filteredVehicles.map(vehicle =>
+          vehicle.vehicleId === action.payload.vehicleId ? action.payload : vehicle
+        );
+      })
+      .addCase(updateVehicleAvailability.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });

@@ -35,12 +35,20 @@ export default function BookVehicleScreen() {
 
   useEffect(() => {
     if (Platform.OS !== 'web') {
-      const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      const backAction = () => {
         router.back();
         return true;
-      });
+      };
 
-      return () => backHandler.remove();
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+
+      return () => {
+        try {
+          backHandler.remove();
+        } catch (error) {
+          console.log('Error removing back handler:', error);
+        }
+      };
     }
   }, []);
 
@@ -60,6 +68,16 @@ export default function BookVehicleScreen() {
   };
 
   const handleBooking = async () => {
+    if (!vehicle) {
+      Alert.alert('Error', 'Vehicle not found');
+      return;
+    }
+
+    if (!user?.id) {
+      Alert.alert('Error', 'Please log in to book a ride');
+      return;
+    }
+
     if (!pickupLocation || !destination || !passengers || !duration) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
@@ -69,8 +87,12 @@ export default function BookVehicleScreen() {
 
     try {
       const bookingData = {
+        id: Math.random().toString(36).substr(2, 9),
         vehicleId: vehicle.vehicleId,
-        userId: user?.id,
+        userId: user.id,
+        userName: user.fullName,
+        driverId: vehicle.driverId,
+        driverName: vehicle.driverName,
         pickupLocation,
         destination,
         passengers: parseInt(passengers),
@@ -81,31 +103,39 @@ export default function BookVehicleScreen() {
         cost: calculateEstimatedCost(),
       };
 
-      await dispatch(createBooking(bookingData)).unwrap();
-      await dispatch(updateVehicleAvailability({ vehicleId: vehicle.vehicleId, available: false })).unwrap();
+      console.log('Creating booking with data:', bookingData);
+      
+      // First create the booking
+      const bookingResult = await dispatch(createBooking(bookingData)).unwrap();
+      
+      if (bookingResult) {
+        // Then update vehicle availability
+        await dispatch(updateVehicleAvailability({ 
+          vehicleId: vehicle.vehicleId, 
+          available: false 
+        })).unwrap();
 
+        Alert.alert(
+          'Booking Successful',
+          'Your ride has been booked successfully!',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                router.replace('/(app)/(tabs)');
+              },
+            }
+          ],
+          { cancelable: false }
+        );
+      }
+    } catch (error: any) {
+      console.error('Booking error:', error);
       Alert.alert(
-        'Success',
-        'Your booking has been submitted successfully!',
-        [
-          {
-            text: 'View Bookings',
-            onPress: () => {
-              router.push('/(app)/bookings');
-            },
-            style: 'default',
-          },
-          {
-            text: 'Back to Home',
-            onPress: () => {
-              router.push('/(app)/(tabs)');
-            },
-          },
-        ],
-        { cancelable: false }
+        'Booking Failed',
+        error.message || 'Failed to create booking. Please try again.',
+        [{ text: 'OK' }]
       );
-    } catch (error) {
-      Alert.alert('Error', 'Failed to create booking. Please try again.');
     } finally {
       setIsLoading(false);
     }
