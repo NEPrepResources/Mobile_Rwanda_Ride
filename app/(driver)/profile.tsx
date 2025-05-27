@@ -10,6 +10,7 @@ export default function DriverProfileScreen() {
   const { user } = useSelector((state: RootState) => state.auth);
   const { theme } = useSelector((state: RootState) => state.settings);
 
+
   return (
     <ScrollView 
       style={[
@@ -57,7 +58,7 @@ export default function DriverProfileScreen() {
         </View>
       </View>
 
-      <TouchableOpacity style={styles.logoutButton}>
+      <TouchableOpacity style={styles.logoutButton} onPress={() => router.push('/(auth)/login')}>
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
     </ScrollView>
